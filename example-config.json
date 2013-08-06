@@ -1,12 +1,10 @@
 {
   "services": {
     "ping-google": {
-      "command": "ping",
-      "args": ["-c", "3", "google.com"]
+      "command": "ping -c 3 google.com"
     },
     "ping-bing": {
-      "command": "ping",
-      "args": ["-c", "3", "www.bing.com"]
+      "command": "ping -c 3 google.com"
     }
   }
 }

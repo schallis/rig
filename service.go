@@ -12,13 +12,12 @@ import (
 type Service struct {
 	Name   string
 	Cmd	   string
-	Args   []string
 	Dir    string
 	logger *logging.Logger
 }
 
 func (s *Service) Start(wg *sync.WaitGroup) {
-	cmd := exec.Command(s.Cmd, s.Args...)
+	cmd := exec.Command("/bin/bash", "-c", s.Cmd)
 	cmd.Dir = s.Dir
 
 	s.logOutputStreams(cmd)

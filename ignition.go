@@ -11,7 +11,6 @@ import (
 
 type ServiceConfig struct {
 	Command string
-	Args    []string
 	Dir     string
 }
 
@@ -68,7 +67,6 @@ func main() {
 		service := Service{
 			Name:   name,
 			Cmd:    serviceConfig.Command,
-			Args:   serviceConfig.Args,
 			Dir:    serviceConfig.Dir,
 			logger: logging.NewLogger(d, name),
 		}
