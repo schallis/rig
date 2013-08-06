@@ -4,6 +4,7 @@ import (
 	"os"
 	"io/ioutil"
 	"fmt"
+	"sync"
 	"encoding/json"
 	"github.com/hmarr/ignition/logging"
 )
@@ -78,15 +79,14 @@ func main() {
 	nameWidth := maxNameWidth(services...)
 	go logging.NewTerminalSubscriber(d, nameWidth)
 
+	var wg sync.WaitGroup
+	wg.Add(len(services))
+
 	// Kick off all services
 	for _, service := range(services) {
-		go func(s Service) { s.Start(doneChan) }(service)
+		go func(s Service) { s.Start(&wg) }(service)
 	}
-
-	// Wait for all services to finish
-	for i := 0; i < len(services); i++ {
-		<- doneChan
-	}
+	wg.Wait()
 
 	// Wait for the log dispatcher to finish
 	d.Stop()

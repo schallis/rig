@@ -4,6 +4,7 @@ import (
 	"log"
 	"io"
 	"bufio"
+	"sync"
 	"os/exec"
 	"github.com/hmarr/ignition/logging"
 )
@@ -16,7 +17,7 @@ type Service struct {
 	logger *logging.Logger
 }
 
-func (s *Service) Start(done chan<- bool) {
+func (s *Service) Start(wg *sync.WaitGroup) {
 	cmd := exec.Command(s.Cmd, s.Args...)
 	cmd.Dir = s.Dir
 
@@ -33,7 +34,7 @@ func (s *Service) Start(done chan<- bool) {
 		s.logger.Logf("Service '%v' stopped", s.Name)
 	}
 
-	done <- true
+	wg.Done()
 }
 
 func (s *Service) logOutputStreams(cmd *exec.Cmd) {
