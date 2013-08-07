@@ -17,7 +17,7 @@ type Service struct {
 }
 
 func (s *Service) Start(wg *sync.WaitGroup) {
-	cmd := exec.Command("/bin/bash", "-c", s.Cmd)
+	cmd := exec.Command("/bin/sh", "-c", s.Cmd)
 	cmd.Dir = s.Dir
 
 	s.logOutputStreams(cmd)
