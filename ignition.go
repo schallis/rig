@@ -19,11 +19,11 @@ type Config struct {
 }
 
 func loadConfig(configFile string) Config {
-    file, e := ioutil.ReadFile(configFile)
-    if e != nil {
-        fmt.Fprintf(os.Stderr, "Error reading config file: %v\n", e)
-        os.Exit(1)
-    }
+	file, e := ioutil.ReadFile(configFile)
+	if e != nil {
+		fmt.Fprintf(os.Stderr, "Error reading config file: %v\n", e)
+		os.Exit(1)
+	}
 
 	var config Config
 	err := json.Unmarshal(file, &config)
