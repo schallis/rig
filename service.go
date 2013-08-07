@@ -6,7 +6,7 @@ import (
 	"bufio"
 	"sync"
 	"os/exec"
-	"github.com/hmarr/ignition/logging"
+	"github.com/gocardless/ignition/logging"
 )
 
 type Service struct {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"encoding/json"
-	"github.com/hmarr/ignition/logging"
+	"github.com/gocardless/ignition/logging"
 )
 
 type ServiceConfig struct {
