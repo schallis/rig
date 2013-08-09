@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"sync"
 	"encoding/json"
-	"github.com/gocardless/ignition/logging"
+	"github.com/gocardless/rig"
+	"github.com/gocardless/rig/logging"
 )
 
 type ServiceConfig struct {
@@ -36,7 +37,7 @@ func loadConfig(configFile string) Config {
 
 // Helper function to determine the longest service name, to help with
 // displaying pretty terminal output
-func maxNameWidth(services ...Service) int {
+func maxNameWidth(services ...rig.Service) int {
 	max := 0
 	for _, service := range(services) {
 		if len(service.Name) > max {
@@ -62,13 +63,13 @@ func main() {
 	}()
 
 	// Initialise services from the configuration
-	var services []Service
+	var services []rig.Service
 	for name, serviceConfig := range(config.Services) {
-		service := Service{
+		service := rig.Service{
 			Name:   name,
 			Cmd:    serviceConfig.Command,
 			Dir:    serviceConfig.Dir,
-			logger: logging.NewLogger(d, name),
+			Logger: logging.NewLogger(d, name),
 		}
 		services = append(services, service)
 	}
@@ -82,7 +83,7 @@ func main() {
 
 	// Kick off all services
 	for _, service := range(services) {
-		go func(s Service) { s.Start(&wg) }(service)
+		go func(s rig.Service) { s.Start(&wg) }(service)
 	}
 	wg.Wait()
 

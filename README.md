@@ -1,16 +1,18 @@
-![](http://cl.ly/image/3a0k2U2y2B42/ignition-header.png)
+# rig
+
+Runs services.
 
 ## Usage
 
 ```bash
 $ go build .
-$ ./ignition conf.json
+$ ./rigd conf.json
 # a bunch of cool stuff happens
 ```
 
 ## Configuration
 
-Ignition accepts a JSON configuration file, which defines how to run your
+Rig accepts a JSON configuration file, which defines how to run your
 services:
 
 ```json

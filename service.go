@@ -1,4 +1,4 @@
-package main
+package rig
 
 import (
 	"log"
@@ -6,14 +6,14 @@ import (
 	"bufio"
 	"sync"
 	"os/exec"
-	"github.com/gocardless/ignition/logging"
+	"github.com/gocardless/rig/logging"
 )
 
 type Service struct {
 	Name   string
 	Cmd	   string
 	Dir    string
-	logger *logging.Logger
+	Logger *logging.Logger
 }
 
 func (s *Service) Start(wg *sync.WaitGroup) {
@@ -22,15 +22,15 @@ func (s *Service) Start(wg *sync.WaitGroup) {
 
 	s.logOutputStreams(cmd)
 
-	s.logger.Logf("Starting service '%v'", s.Name)
+	s.Logger.Logf("Starting service '%v'", s.Name)
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
 
 	if err := cmd.Wait(); err != nil {
-		s.logger.Logf("Service '%v' failed: %v", s.Name, err)
+		s.Logger.Logf("Service '%v' failed: %v", s.Name, err)
 	} else {
-		s.logger.Logf("Service '%v' stopped", s.Name)
+		s.Logger.Logf("Service '%v' stopped", s.Name)
 	}
 
 	wg.Done()
@@ -54,10 +54,10 @@ func (s *Service) logOutputStreams(cmd *exec.Cmd) {
 func (s *Service) logStream(stream io.ReadCloser, streamName string) {
 	scanner := bufio.NewScanner(stream)
 	for scanner.Scan() {
-		s.logger.Log(scanner.Text())
+		s.Logger.Log(scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		s.logger.Logf("error reading %v: %v", streamName, err)
+		s.Logger.Logf("error reading %v: %v", streamName, err)
 	}
 }
 
