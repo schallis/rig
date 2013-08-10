@@ -1,4 +1,4 @@
-![](http://cl.ly/image/2v3O3s180l36/rig.png)
+<img src="http://cl.ly/image/2v3O3s180l36/rig.png" width="200"/>
 
 Run and manage services on your development machine.
 
