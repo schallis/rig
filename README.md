@@ -1,4 +1,4 @@
-<img src="http://cl.ly/image/2v3O3s180l36/rig.png" width="200"/>
+<img src="http://f.cl.ly/items/0A362Z0H2C272k1O1832/rig-logo.jpg" width="200"/>
 
 Run and manage services on your development machine.
 
