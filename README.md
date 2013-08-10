@@ -1,4 +1,4 @@
-# rig
+![](http://cl.ly/image/2v3O3s180l36/rig.png)
 
 Run and manage services on your development machine.
 
