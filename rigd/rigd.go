@@ -9,13 +9,13 @@ import (
 	"github.com/gocardless/rig/logging"
 )
 
-type ServiceConfig struct {
+type TaskConfig struct {
 	Command string
 	Dir     string
 }
 
 type Config struct {
-	Services map[string]ServiceConfig
+	Tasks map[string]TaskConfig
 }
 
 func loadConfig(configFile string) Config {
@@ -34,13 +34,13 @@ func loadConfig(configFile string) Config {
 	return config
 }
 
-// Helper function to determine the longest service name, to help with
+// Helper function to determine the longest task name, to help with
 // displaying pretty terminal output
-func maxNameWidth(services ...Service) int {
+func maxNameWidth(tasks ...Task) int {
 	max := 0
-	for _, service := range(services) {
-		if len(service.Name) > max {
-			max = len(service.Name)
+	for _, task := range(tasks) {
+		if len(task.Name) > max {
+			max = len(task.Name)
 		}
 	}
 	return max
@@ -61,28 +61,28 @@ func main() {
 		doneChan <- true
 	}()
 
-	// Initialise services from the configuration
-	var services []Service
-	for name, serviceConfig := range(config.Services) {
-		service := Service{
+	// Initialise tasks from the configuration
+	var tasks []Task
+	for name, taskConfig := range(config.Tasks) {
+		task := Task{
 			Name:   name,
-			Cmd:    serviceConfig.Command,
-			Dir:    serviceConfig.Dir,
+			Cmd:    taskConfig.Command,
+			Dir:    taskConfig.Dir,
 			Logger: logging.NewLogger(d, name),
 		}
-		services = append(services, service)
+		tasks = append(tasks, task)
 	}
 
 	// Spawn a terminal subscriber, so we se the logs in the terminal
-	nameWidth := maxNameWidth(services...)
+	nameWidth := maxNameWidth(tasks...)
 	go logging.NewTerminalSubscriber(d, nameWidth)
 
 	var wg sync.WaitGroup
-	wg.Add(len(services))
+	wg.Add(len(tasks))
 
-	// Kick off all services
-	for _, service := range(services) {
-		go func(s Service) { s.Start(&wg) }(service)
+	// Kick off all tasks
+	for _, task := range(tasks) {
+		go func(s Task) { s.Start(&wg) }(task)
 	}
 	wg.Wait()
 
