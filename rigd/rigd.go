@@ -9,13 +9,13 @@ import (
 	"github.com/gocardless/rig/logging"
 )
 
-type TaskConfig struct {
+type ProcessConfig struct {
 	Command string
 	Dir     string
 }
 
 type Config struct {
-	Tasks map[string]TaskConfig
+	Processes map[string]ProcessConfig
 }
 
 func loadConfig(configFile string) Config {
@@ -34,13 +34,13 @@ func loadConfig(configFile string) Config {
 	return config
 }
 
-// Helper function to determine the longest task name, to help with
+// Helper function to determine the longest process name, to help with
 // displaying pretty terminal output
-func maxNameWidth(tasks ...Task) int {
+func maxNameWidth(processes ...Process) int {
 	max := 0
-	for _, task := range(tasks) {
-		if len(task.Name) > max {
-			max = len(task.Name)
+	for _, process := range(processes) {
+		if len(process.Name) > max {
+			max = len(process.Name)
 		}
 	}
 	return max
@@ -61,28 +61,28 @@ func main() {
 		doneChan <- true
 	}()
 
-	// Initialise tasks from the configuration
-	var tasks []Task
-	for name, taskConfig := range(config.Tasks) {
-		task := Task{
+	// Initialise processes from the configuration
+	var processes []Process
+	for name, processConfig := range(config.Processes) {
+		process := Process{
 			Name:   name,
-			Cmd:    taskConfig.Command,
-			Dir:    taskConfig.Dir,
+			Cmd:    processConfig.Command,
+			Dir:    processConfig.Dir,
 			Logger: logging.NewLogger(d, name),
 		}
-		tasks = append(tasks, task)
+		processes = append(processes, process)
 	}
 
 	// Spawn a terminal subscriber, so we se the logs in the terminal
-	nameWidth := maxNameWidth(tasks...)
+	nameWidth := maxNameWidth(processes...)
 	go logging.NewTerminalSubscriber(d, nameWidth)
 
 	var wg sync.WaitGroup
-	wg.Add(len(tasks))
+	wg.Add(len(processes))
 
-	// Kick off all tasks
-	for _, task := range(tasks) {
-		go func(s Task) { s.Start(&wg) }(task)
+	// Kick off all processes
+	for _, process := range(processes) {
+		go func(s Process) { s.Start(&wg) }(process)
 	}
 	wg.Wait()
 

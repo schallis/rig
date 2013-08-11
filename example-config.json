@@ -1,5 +1,5 @@
 {
-  "tasks": {
+  "processes": {
     "ping-google": {
       "command": "ping -c 3 google.com"
     },
