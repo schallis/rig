@@ -61,7 +61,7 @@ func (s *Service) parseProcfile(path string) error {
 			return fmt.Errorf("error in procfile %v (line %v)", path, lineNo)
 		}
 
-		s.Processes[name] = &Process{Name: name, Cmd: cmd}
+		s.Processes[name] = NewProcess(name, cmd)
 
 		lineNo += 1
 	}

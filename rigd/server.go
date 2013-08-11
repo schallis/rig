@@ -62,6 +62,27 @@ func (srv *Server) StartProcess(stack, service, process string) error {
 	return nil
 }
 
+func (srv *Server) StopProcess(stack, service, process string) error {
+	s := srv.stacks[stack]
+	if s == nil {
+		return fmt.Errorf("stack '%v' does not exist", stack)
+	}
+
+	svc := s.Services[service]
+	if svc == nil {
+		return fmt.Errorf("service '%v' does not exist", service)
+	}
+
+	p := svc.Processes[process]
+	if p == nil {
+		return fmt.Errorf("process '%v' does not exist", process)
+	}
+
+	p.Stop()
+
+	return nil
+}
+
 func (s *Server) Resolve() error {
 	return nil
 }
