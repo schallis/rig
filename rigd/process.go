@@ -29,6 +29,10 @@ func NewProcess(name, cmd string) *Process {
 }
 
 func (p *Process) Start(dir string) error {
+	if p.Status != Stopped {
+		return fmt.Errorf("process %v is already running", p.Name)
+	}
+
 	cmd := exec.Command("/bin/sh", "-c", p.Cmd)
 	cmd.Dir = dir
 
