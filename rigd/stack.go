@@ -4,7 +4,7 @@ import "sync"
 
 type Stack struct {
 	Name     string
-	Services []*Service
+	Services map[string]*Service
 }
 
 func (s *Stack) Start() {
