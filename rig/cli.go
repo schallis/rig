@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type Cli struct {
@@ -62,7 +63,7 @@ func (c *Cli) CmdHelp(args ...string) error {
 		{"stop", "Stop a stack, a service or a process"},
 		{"tail", "Tail logs of a stack, a service or a process"},
 		{"help", "Show rig help"},
-		{"version", "Display the rig version"},
+		{"version", "Show the rig version"},
 	} {
 		help += fmt.Sprintf("    %-10.10s%s\n", cmd[0], cmd[1])
 	}
@@ -75,6 +76,30 @@ func (c *Cli) CmdRestart(args ...string) error {
 }
 
 func (c *Cli) CmdStart(args ...string) error {
+	cmd := c.Subcmd("start", "DESCRIPTOR", "Start a stack, a service or a process")
+	if err := cmd.Parse(args); err != nil {
+		return nil
+	}
+
+	if cmd.NArg() < 1 {
+		cmd.Usage()
+		return nil
+	}
+
+	descriptor := strings.Split(cmd.Args()[0], ":")
+
+	// resolveBody, _, err := c.call("POST", "/resolve", nil)
+	// if err != nil {
+	// 	return err
+	// }
+
+	body, _, err := c.call("POST", "/"+descriptor[0]+"/"+descriptor[1]+"/"+descriptor[2]+"/start", nil)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(body)
+
 	return nil
 }
 
@@ -87,8 +112,13 @@ func (c *Cli) CmdTail(args ...string) error {
 }
 
 func (c *Cli) CmdVersion(args ...string) error {
-	cmd := c.Subcmd("version", "", "Display the rig version")
+	cmd := c.Subcmd("version", "", "Show the rig version")
 	if err := cmd.Parse(args); err != nil {
+		return nil
+	}
+
+	if cmd.NArg() > 0 {
+		cmd.Usage()
 		return nil
 	}
 

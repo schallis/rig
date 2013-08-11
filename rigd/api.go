@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"log"
 	"net"
@@ -32,12 +33,15 @@ func makeRouter(srv *Server) (*mux.Router, error) {
 	mapRoutes := map[string]map[string]func(*Server, http.ResponseWriter, *http.Request, map[string]string) error{
 		"GET": {
 			"/version": getVersion,
+			"/resolve": getResolve,
 		},
 		"POST": {
-			"/{stack:.*}/tail":    postStackTail,
-			"/{stack:.*}/restart": postStackRestart,
-			"/{stack:.*}/start":   postStackStart,
-			"/{stack:.*}/stop":    postStackStop,
+			"/{stack:.*}/tail":                            postStackTail,
+			"/{stack:.*}/restart":                         postStackRestart,
+			"/{stack:.*}/start":                           postStackStart,
+			"/{stack:.*}/stop":                            postStackStop,
+			"/{stack:.*}/{service:.*}/start":              postServiceStart,
+			"/{stack:.*}/{service:.*}/{process:.*}/start": postProcessStart,
 		},
 	}
 
@@ -76,6 +80,10 @@ func writeJSON(w http.ResponseWriter, b []byte) {
 	w.Write(b)
 }
 
+func getResolve(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	return nil
+}
+
 func getVersion(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	v := srv.Version()
 	b, err := json.Marshal(v)
@@ -90,7 +98,45 @@ func postStackRestart(srv *Server, w http.ResponseWriter, r *http.Request, vars 
 	return nil
 }
 
+func postProcessStart(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+	stack := vars["stack"]
+	service := vars["service"]
+	process := vars["process"]
+
+	if err := srv.StartProcess(stack, service, process); err != nil {
+		log.Println(err)
+	}
+
+	return nil
+}
+
+func postServiceStart(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+	stack := vars["stack"]
+	service := vars["service"]
+
+	if err := srv.StartService(stack, service); err != nil {
+		log.Println(err)
+	}
+
+	return nil
+}
+
 func postStackStart(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+	stack := vars["stack"]
+
+	if err := srv.StartStack(stack); err != nil {
+		log.Println(err)
+	}
+
 	return nil
 }
 

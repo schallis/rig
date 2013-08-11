@@ -62,6 +62,10 @@ func (srv *Server) StartProcess(stack, service, process string) error {
 	return nil
 }
 
+func (s *Server) Resolve() error {
+	return nil
+}
+
 func (srv *Server) Version() rig.ApiVersion {
 	return rig.ApiVersion{
 		rig.Version,
