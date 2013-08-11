@@ -7,6 +7,10 @@ type Stack struct {
 	Services map[string]*Service
 }
 
+func NewStack(name string) *Stack {
+	return &Stack{Name: name, Services: make(map[string]*Service)}
+}
+
 func (s *Stack) Start() {
 	var wg sync.WaitGroup
 	for _, svc := range(s.Services) {

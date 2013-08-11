@@ -5,33 +5,30 @@ import (
 	"io"
 	"bufio"
 	"os/exec"
-	"github.com/gocardless/rig/logging"
 )
 
 type Process struct {
 	Name   string
 	Cmd	   string
-	Dir    string
-	Logger *logging.Logger
 }
 
-func (p *Process) Start() error {
+func (p *Process) Start(dir string) error {
 	cmd := exec.Command("/bin/sh", "-c", p.Cmd)
-	cmd.Dir = p.Dir
+	cmd.Dir = dir
 
 	p.logOutputStreams(cmd)
 
-	p.Logger.Logf("Starting process '%v'", p.Name)
+	log.Printf("Starting process '%v'\n", p.Name)
 	if err := cmd.Start(); err != nil {
-		p.Logger.Logf("Error starting process '%v': %v", p.Name, err)
+		log.Printf("Error starting process '%v': %v\n", p.Name, err)
 		return err
 	}
 
 	if err := cmd.Wait(); err != nil {
-		p.Logger.Logf("Process '%v' failed: %v", p.Name, err)
+		log.Printf("Process '%v' failed: %v\n", p.Name, err)
 		return err
 	} else {
-		p.Logger.Logf("Process '%v' stopped", p.Name)
+		log.Printf("Process '%v' stopped\n", p.Name)
 	}
 
 	return nil
@@ -55,10 +52,10 @@ func (p *Process) logOutputStreams(cmd *exec.Cmd) {
 func (p *Process) logStream(stream io.ReadCloser, streamName string) {
 	scanner := bufio.NewScanner(stream)
 	for scanner.Scan() {
-		p.Logger.Log(scanner.Text())
+		log.Println(p.Name, "|", scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		p.Logger.Logf("error reading %v: %v", streamName, err)
+		log.Printf("error reading %v: %v\n", streamName, err)
 	}
 }
 
