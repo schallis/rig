@@ -76,6 +76,10 @@ func (p *Process) Stop() error {
 	return nil
 }
 
+func (p *Process) SubscribeToOutput(c chan ProcessOutputMessage) *ProcessOutputSubscription {
+	return p.outputDispatcher.Subscribe(c)
+}
+
 func (p *Process) setStatus(status ProcessStatus) {
 	p.Status = status
 }
