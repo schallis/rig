@@ -4,7 +4,6 @@ import (
 	"log"
 	"io"
 	"bufio"
-	"sync"
 	"os/exec"
 	"github.com/gocardless/rig/logging"
 )
@@ -16,7 +15,7 @@ type Process struct {
 	Logger *logging.Logger
 }
 
-func (p *Process) Start(wg *sync.WaitGroup) {
+func (p *Process) Start() error {
 	cmd := exec.Command("/bin/sh", "-c", p.Cmd)
 	cmd.Dir = p.Dir
 
@@ -24,16 +23,18 @@ func (p *Process) Start(wg *sync.WaitGroup) {
 
 	p.Logger.Logf("Starting process '%v'", p.Name)
 	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
+		p.Logger.Logf("Error starting process '%v': %v", p.Name, err)
+		return err
 	}
 
 	if err := cmd.Wait(); err != nil {
 		p.Logger.Logf("Process '%v' failed: %v", p.Name, err)
+		return err
 	} else {
 		p.Logger.Logf("Process '%v' stopped", p.Name)
 	}
 
-	wg.Done()
+	return nil
 }
 
 func (p *Process) logOutputStreams(cmd *exec.Cmd) {

@@ -78,11 +78,14 @@ func main() {
 	go logging.NewTerminalSubscriber(d, nameWidth)
 
 	var wg sync.WaitGroup
-	wg.Add(len(processes))
 
 	// Kick off all processes
 	for _, process := range(processes) {
-		go func(s Process) { s.Start(&wg) }(process)
+		wg.Add(1)
+		go func(s Process) {
+			s.Start()
+			wg.Done()
+		}(process)
 	}
 	wg.Wait()
 
