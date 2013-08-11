@@ -78,9 +78,7 @@ func (srv *Server) StopProcess(stack, service, process string) error {
 		return fmt.Errorf("process '%v' does not exist", process)
 	}
 
-	p.Stop()
-
-	return nil
+	return p.Stop()
 }
 
 func (s *Server) Resolve() error {
