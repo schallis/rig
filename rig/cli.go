@@ -9,13 +9,17 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 )
 
 type Cli struct {
 	client *http.Client
 	proto  string
 	addr   string
+	out    io.Writer
+	err    io.Writer
 }
 
 func NewCli(proto, addr string) *Cli {
@@ -23,6 +27,8 @@ func NewCli(proto, addr string) *Cli {
 		client: &http.Client{},
 		proto:  proto,
 		addr:   addr,
+		out:    os.Stdout,
+		err:    os.Stderr,
 	}
 	return cli
 }
@@ -164,6 +170,44 @@ func (c *Cli) CmdStop(args ...string) error {
 }
 
 func (c *Cli) CmdTail(args ...string) error {
+	cmd := c.Subcmd("stop", "DESCRIPTOR", "Stop a stack, a service or a process")
+	if err := cmd.Parse(args); err != nil {
+		return nil
+	}
+
+	if cmd.NArg() < 1 {
+		cmd.Usage()
+		return nil
+	}
+
+	descriptor := strings.Split(cmd.Arg(0), ":")
+	l := len(descriptor)
+
+	var stack, service, process string
+	var path string
+
+	stack = descriptor[0]
+	path = fmt.Sprintf("/%s/tail", stack)
+
+	if l > 1 {
+		service = descriptor[1]
+		path = fmt.Sprintf("/%s/%s/tail", stack, service)
+	}
+	if l > 2 {
+		process = descriptor[2]
+		path = fmt.Sprintf("/%s/%s/%s/tail", stack, service, process)
+	}
+
+	// resolveBody, _, err := c.call("POST", "/resolve", nil)
+	// if err != nil {
+	// 	return err
+	// }
+
+	err := c.stream("POST", path, nil)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -215,12 +259,71 @@ func (c *Cli) call(method, path string, data interface{}) ([]byte, int, error) {
 	if err != nil {
 		return nil, -1, err
 	}
-
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, -1, err
 	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		if len(body) == 0 {
+			return nil, resp.StatusCode, fmt.Errorf("Error: %s", http.StatusText(resp.StatusCode))
+		}
+		return nil, resp.StatusCode, fmt.Errorf("Error: %s", body)
+	}
 
 	return body, resp.StatusCode, nil
+}
+
+func (c *Cli) stream(method, path string, data interface{}) error {
+	var reqBody io.Reader
+	if data != nil {
+		buf, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+		reqBody = bytes.NewBuffer(buf)
+	}
+
+	urlStr := fmt.Sprintf("%s://%s%s", c.proto, c.addr, path)
+	req, err := http.NewRequest(method, urlStr, reqBody)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", "Rig-Client/"+rig.Version)
+
+	resp, err := c.client.Do(req)
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		if len(body) == 0 {
+			return fmt.Errorf("Error :%s", http.StatusText(resp.StatusCode))
+		}
+		return fmt.Errorf("Error: %s", body)
+	}
+
+	defer resp.Body.Close()
+	dec := json.NewDecoder(resp.Body)
+	for {
+		m := ProcessOutputMessage{}
+		if err := dec.Decode(&m); err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		fmt.Fprintf(c.out, "%+v\r\n", m)
+	}
+	return nil
+}
+
+type ProcessOutputMessage struct {
+	Content string
+	Stack   string
+	Service string
+	Process string
+	Time    time.Time
 }

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"time"
-	"io"
-	"encoding/hex"
 	"crypto/rand"
+	"encoding/hex"
+	"io"
+	"time"
 )
 
 type ProcessOutputMessage struct {
@@ -69,4 +69,3 @@ func generateId() string {
 	}
 	return hex.EncodeToString(id)
 }
-

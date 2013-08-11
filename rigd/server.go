@@ -81,6 +81,26 @@ func (srv *Server) StopProcess(stack, service, process string) error {
 	return p.Stop()
 }
 
+func (srv *Server) TailProcess(c chan ProcessOutputMessage, stack, service, process string) (*ProcessOutputSubscription, error) {
+	s := srv.stacks[stack]
+	if s == nil {
+		return nil, fmt.Errorf("stack '%v' does not exist", stack)
+	}
+
+	svc := s.Services[service]
+	if svc == nil {
+		return nil, fmt.Errorf("service '%v' does not exist", service)
+	}
+
+	p := svc.Processes[process]
+	if p == nil {
+		return nil, fmt.Errorf("process '%v' does not exist", process)
+	}
+
+	sub := p.SubscribeToOutput(c)
+	return sub, nil
+}
+
 func (s *Server) Resolve() error {
 	return nil
 }

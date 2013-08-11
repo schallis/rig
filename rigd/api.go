@@ -38,12 +38,13 @@ func makeRouter(srv *Server) (*mux.Router, error) {
 		"POST": {
 			"/{stack:.*}/{service:.*}/{process:.*}/start": postProcessStart,
 			"/{stack:.*}/{service:.*}/{process:.*}/stop":  postProcessStop,
-			"/{stack:.*}/{service:.*}/start":              postServiceStart,
-			"/{stack:.*}/{service:.*}/stop":               postServiceStop,
-			"/{stack:.*}/start":                           postStackStart,
-			"/{stack:.*}/stop":                            postStackStop,
-			"/{stack:.*}/tail":                            postStackTail,
-			"/{stack:.*}/restart":                         postStackRestart,
+			"/{stack:.*}/{service:.*}/{process:.*}/tail":  postProcessTail,
+			// "/{stack:.*}/{service:.*}/start":              postServiceStart,
+			// "/{stack:.*}/{service:.*}/stop":               postServiceStop,
+			// "/{stack:.*}/start":                           postStackStart,
+			// "/{stack:.*}/stop":                            postStackStop,
+			// "/{stack:.*}/tail":                            postStackTail,
+			// "/{stack:.*}/restart":                         postStackRestart,
 		},
 	}
 
@@ -125,6 +126,36 @@ func postProcessStop(srv *Server, w http.ResponseWriter, r *http.Request, vars m
 
 	if err := srv.StopProcess(stack, service, process); err != nil {
 		log.Println(err)
+	}
+
+	return nil
+}
+
+func postProcessTail(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+	stack := vars["stack"]
+	service := vars["service"]
+	process := vars["process"]
+
+	w.Header().Set("Content-Type", "application/json")
+
+	subCh := make(chan ProcessOutputMessage)
+	sub, err := srv.TailProcess(subCh, stack, service, process)
+	if err != nil {
+		return err
+	}
+	for {
+		select {
+		case msg := <-sub.msgCh:
+			b, err := json.Marshal(msg)
+			if err != nil {
+				return err
+			}
+			w.Write(b)
+			w.(http.Flusher).Flush()
+		}
 	}
 
 	return nil

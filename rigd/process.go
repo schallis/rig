@@ -110,10 +110,8 @@ func (p *Process) logStream(stream io.ReadCloser, streamName string) {
 			Time:    time.Now(),
 		}
 		p.outputDispatcher.Publish(msg)
-		//log.Println(p.Name, "|", scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		log.Printf("error reading %v: %v\n", streamName, err)
 	}
 }
-
