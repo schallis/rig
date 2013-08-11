@@ -86,14 +86,30 @@ func (c *Cli) CmdStart(args ...string) error {
 		return nil
 	}
 
-	descriptor := strings.Split(cmd.Args()[0], ":")
+	descriptor := strings.Split(cmd.Arg(0), ":")
+	l := len(descriptor)
+
+	var stack, service, process string
+	var path string
+
+	stack = descriptor[0]
+	path = fmt.Sprintf("/%s/start", stack)
+
+	if l > 1 {
+		service = descriptor[1]
+		path = fmt.Sprintf("/%s/%s/start", stack, service)
+	}
+	if l > 2 {
+		process = descriptor[2]
+		path = fmt.Sprintf("/%s/%s/%s/start", stack, service, process)
+	}
 
 	// resolveBody, _, err := c.call("POST", "/resolve", nil)
 	// if err != nil {
 	// 	return err
 	// }
 
-	body, _, err := c.call("POST", "/"+descriptor[0]+"/"+descriptor[1]+"/"+descriptor[2]+"/start", nil)
+	body, _, err := c.call("POST", path, nil)
 	if err != nil {
 		return err
 	}
