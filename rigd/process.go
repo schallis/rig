@@ -2,12 +2,13 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"os"
-	"fmt"
 	"os/exec"
 	"syscall"
+	"time"
 )
 
 const (
@@ -18,14 +19,22 @@ const (
 type ProcessStatus int
 
 type Process struct {
-	Name    string
-	Cmd     string
-	Status  ProcessStatus
-	Process *os.Process
+	Name             string
+	Cmd              string
+	Service          *Service
+	Status           ProcessStatus
+	Process          *os.Process
+	outputDispatcher *ProcessOutputDispatcher
 }
 
-func NewProcess(name, cmd string) *Process {
-	return &Process{Name: name, Cmd: cmd, Status: Stopped}
+func NewProcess(name, cmd string, service *Service) *Process {
+	return &Process{
+		Name:             name,
+		Cmd:              cmd,
+		Service:          service,
+		Status:           Stopped,
+		outputDispatcher: NewProcessOutputDispatcher(),
+	}
 }
 
 func (p *Process) Start(dir string) error {
@@ -36,7 +45,7 @@ func (p *Process) Start(dir string) error {
 	cmd := exec.Command("/bin/sh", "-c", p.Cmd)
 	cmd.Dir = dir
 
-	p.logOutputStreams(cmd)
+	p.streamOutput(cmd)
 
 	log.Printf("Starting process '%v'\n", p.Name)
 	if err := cmd.Start(); err != nil {
@@ -71,7 +80,7 @@ func (p *Process) setStatus(status ProcessStatus) {
 	p.Status = status
 }
 
-func (p *Process) logOutputStreams(cmd *exec.Cmd) {
+func (p *Process) streamOutput(cmd *exec.Cmd) {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -89,9 +98,18 @@ func (p *Process) logOutputStreams(cmd *exec.Cmd) {
 func (p *Process) logStream(stream io.ReadCloser, streamName string) {
 	scanner := bufio.NewScanner(stream)
 	for scanner.Scan() {
-		log.Println(p.Name, "|", scanner.Text())
+		msg := ProcessOutputMessage{
+			Content: scanner.Text(),
+			Stack:   p.Service.Stack.Name,
+			Service: p.Service.Name,
+			Process: p.Name,
+			Time:    time.Now(),
+		}
+		p.outputDispatcher.Publish(msg)
+		//log.Println(p.Name, "|", scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		log.Printf("error reading %v: %v\n", streamName, err)
 	}
 }
+

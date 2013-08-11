@@ -1,24 +1,30 @@
 package main
 
 import (
-	"sync"
+	"bufio"
+	"fmt"
 	"log"
 	"os"
-	"bufio"
-	"strings"
-	"fmt"
 	"path"
+	"strings"
+	"sync"
 )
 
 type Service struct {
 	Name      string
 	Dir       string
+	Stack     *Stack
 	Processes map[string]*Process
 }
 
-func NewService(name string, dir string) (*Service, error) {
-	s := &Service{Name: name, Dir: dir, Processes: make(map[string]*Process)}
-	// TODO: pull processes out of procfile in dir
+func NewService(name string, dir string, stack *Stack) (*Service, error) {
+	s := &Service{
+		Name:      name,
+		Dir:       dir,
+		Stack:     stack,
+		Processes: make(map[string]*Process),
+	}
+
 	if err := s.parseProcfile(path.Join(dir, "Procfile")); err != nil {
 		return nil, err
 	}
@@ -27,7 +33,7 @@ func NewService(name string, dir string) (*Service, error) {
 
 func (s *Service) Start() {
 	var wg sync.WaitGroup
-	for _, p := range(s.Processes) {
+	for _, p := range s.Processes {
 		wg.Add(1)
 		go func(p *Process) {
 			if err := p.Start(s.Dir); err != nil {
@@ -61,7 +67,7 @@ func (s *Service) parseProcfile(path string) error {
 			return fmt.Errorf("error in procfile %v (line %v)", path, lineNo)
 		}
 
-		s.Processes[name] = NewProcess(name, cmd)
+		s.Processes[name] = NewProcess(name, cmd, s)
 
 		lineNo += 1
 	}
@@ -72,4 +78,3 @@ func (s *Service) parseProcfile(path string) error {
 
 	return nil
 }
-

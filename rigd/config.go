@@ -17,7 +17,7 @@ func addServiceToStack(path string, info os.FileInfo, stack *Stack) error {
 		log.Panicf("error: reading service link %v (%v)\n", path, err)
 	}
 
-	service, err := NewService(info.Name(), dir)
+	service, err := NewService(info.Name(), dir, stack)
 	if err != nil {
 		return err
 	}
