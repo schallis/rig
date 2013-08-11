@@ -31,8 +31,7 @@ func makeRouter(srv *Server) (*mux.Router, error) {
 
 	mapRoutes := map[string]map[string]func(*Server, http.ResponseWriter, *http.Request, map[string]string) error{
 		"GET": {
-			"/{stack:.*}/list": getStackList,
-			"/version":         getVersion,
+			"/version": getVersion,
 		},
 		"POST": {
 			"/{stack:.*}/tail":    postStackTail,
@@ -75,10 +74,6 @@ func httpError(w http.ResponseWriter, err error) {
 func writeJSON(w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(b)
-}
-
-func getStackList(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
-	return nil
 }
 
 func getVersion(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {

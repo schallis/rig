@@ -1,12 +1,21 @@
 package main
 
 import (
-	"os"
-	"io/ioutil"
-	"fmt"
-	"sync"
 	"encoding/json"
+	"fmt"
 	"github.com/gocardless/rig/logging"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+)
+
+// This is a copy-paste from rig.go
+var (
+	defaultProto string = "http"
+	defaultAddr  string = "0.0.0.0:9696"
 )
 
 type ProcessConfig struct {
@@ -38,7 +47,7 @@ func loadConfig(configFile string) Config {
 // displaying pretty terminal output
 func maxNameWidth(processes ...Process) int {
 	max := 0
-	for _, process := range(processes) {
+	for _, process := range processes {
 		if len(process.Name) > max {
 			max = len(process.Name)
 		}
@@ -47,6 +56,8 @@ func maxNameWidth(processes ...Process) int {
 }
 
 func main() {
+	launchServer()
+
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: %v config.json\n", os.Args[0])
 		os.Exit(1)
@@ -63,7 +74,7 @@ func main() {
 
 	// Initialise processes from the configuration
 	var processes []Process
-	for name, processConfig := range(config.Processes) {
+	for name, processConfig := range config.Processes {
 		process := Process{
 			Name:   name,
 			Cmd:    processConfig.Command,
@@ -80,7 +91,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	// Kick off all processes
-	for _, process := range(processes) {
+	for _, process := range processes {
 		wg.Add(1)
 		go func(s Process) {
 			s.Start()
@@ -91,6 +102,24 @@ func main() {
 
 	// Wait for the log dispatcher to finish
 	d.Stop()
-	<- doneChan
+	<-doneChan
 }
 
+func launchServer() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill, os.Signal(syscall.SIGTERM))
+	go func() {
+		sig := <-c
+		log.Printf("Received signal %v. Exiting...\n", sig)
+		os.Exit(0)
+	}()
+
+	srv, err := NewServer()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := ListenAndServe(defaultAddr, srv); err != nil {
+		log.Fatal(err)
+	}
+}
