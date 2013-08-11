@@ -37,7 +37,9 @@ func makeRouter(srv *Server) (*mux.Router, error) {
 		},
 		"POST": {
 			"/{stack:.*}/{service:.*}/{process:.*}/start": postProcessStart,
+			"/{stack:.*}/{service:.*}/{process:.*}/stop":  postProcessStop,
 			"/{stack:.*}/{service:.*}/start":              postServiceStart,
+			"/{stack:.*}/{service:.*}/stop":               postServiceStop,
 			"/{stack:.*}/start":                           postStackStart,
 			"/{stack:.*}/stop":                            postStackStop,
 			"/{stack:.*}/tail":                            postStackTail,
@@ -113,6 +115,21 @@ func postProcessStart(srv *Server, w http.ResponseWriter, r *http.Request, vars 
 	return nil
 }
 
+func postProcessStop(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+	stack := vars["stack"]
+	service := vars["service"]
+	process := vars["process"]
+
+	if err := srv.StopProcess(stack, service, process); err != nil {
+		log.Println(err)
+	}
+
+	return nil
+}
+
 func postServiceStart(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
@@ -123,6 +140,20 @@ func postServiceStart(srv *Server, w http.ResponseWriter, r *http.Request, vars 
 	if err := srv.StartService(stack, service); err != nil {
 		log.Println(err)
 	}
+
+	return nil
+}
+
+func postServiceStop(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+	// stack := vars["stack"]
+	// service := vars["service"]
+
+	// if err := srv.StopService(stack, service); err != nil {
+	// 	log.Println(err)
+	// }
 
 	return nil
 }
@@ -141,6 +172,15 @@ func postStackStart(srv *Server, w http.ResponseWriter, r *http.Request, vars ma
 }
 
 func postStackStop(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+	// stack := vars["stack"]
+
+	// if err := srv.StopStack(stack); err != nil {
+	// 	log.Println(err)
+	// }
+
 	return nil
 }
 

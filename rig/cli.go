@@ -120,6 +120,46 @@ func (c *Cli) CmdStart(args ...string) error {
 }
 
 func (c *Cli) CmdStop(args ...string) error {
+	cmd := c.Subcmd("stop", "DESCRIPTOR", "Stop a stack, a service or a process")
+	if err := cmd.Parse(args); err != nil {
+		return nil
+	}
+
+	if cmd.NArg() < 1 {
+		cmd.Usage()
+		return nil
+	}
+
+	descriptor := strings.Split(cmd.Arg(0), ":")
+	l := len(descriptor)
+
+	var stack, service, process string
+	var path string
+
+	stack = descriptor[0]
+	path = fmt.Sprintf("/%s/stop", stack)
+
+	if l > 1 {
+		service = descriptor[1]
+		path = fmt.Sprintf("/%s/%s/stop", stack, service)
+	}
+	if l > 2 {
+		process = descriptor[2]
+		path = fmt.Sprintf("/%s/%s/%s/stop", stack, service, process)
+	}
+
+	// resolveBody, _, err := c.call("POST", "/resolve", nil)
+	// if err != nil {
+	// 	return err
+	// }
+
+	body, _, err := c.call("POST", path, nil)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(body)
+
 	return nil
 }
 
