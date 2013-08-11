@@ -36,12 +36,12 @@ func makeRouter(srv *Server) (*mux.Router, error) {
 			"/resolve": getResolve,
 		},
 		"POST": {
-			"/{stack:.*}/tail":                            postStackTail,
-			"/{stack:.*}/restart":                         postStackRestart,
+			"/{stack:.*}/{service:.*}/{process:.*}/start": postProcessStart,
+			"/{stack:.*}/{service:.*}/start":              postServiceStart,
 			"/{stack:.*}/start":                           postStackStart,
 			"/{stack:.*}/stop":                            postStackStop,
-			"/{stack:.*}/{service:.*}/start":              postServiceStart,
-			"/{stack:.*}/{service:.*}/{process:.*}/start": postProcessStart,
+			"/{stack:.*}/tail":                            postStackTail,
+			"/{stack:.*}/restart":                         postStackRestart,
 		},
 	}
 
