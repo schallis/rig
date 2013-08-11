@@ -1,9 +1,7 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"io"
+	"github.com/gocardless/rig/utils"
 	"time"
 )
 
@@ -38,7 +36,7 @@ func NewProcessOutputDispatcher() *ProcessOutputDispatcher {
 
 func (d *ProcessOutputDispatcher) Subscribe(c chan ProcessOutputMessage) *ProcessOutputSubscription {
 	s := &ProcessOutputSubscription{
-		id:         generateId(),
+		id:         utils.GenerateId(),
 		dispatcher: d,
 		msgCh:      c,
 		endCh:      make(chan bool),
@@ -58,14 +56,4 @@ func (d *ProcessOutputDispatcher) End() {
 	for _, s := range d.subscriptions {
 		s.endCh <- true
 	}
-}
-
-// https://github.com/dotcloud/docker/blob/940d58806c3e3d4409a7eee4859335e98139d09f/image.go#L218-225
-func generateId() string {
-	id := make([]byte, 32)
-	_, err := io.ReadFull(rand.Reader, id)
-	if err != nil {
-		panic(err) // This shouldn't happen
-	}
-	return hex.EncodeToString(id)
 }
