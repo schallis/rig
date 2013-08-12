@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+type RouteHandler func(*Server, http.ResponseWriter, *http.Request, map[string]string) error
+
 func ListenAndServe(addr string, srv *Server) error {
 	log.Printf("Listening for HTTP on %s\n", addr)
 
@@ -30,40 +32,44 @@ func ListenAndServe(addr string, srv *Server) error {
 func makeRouter(srv *Server) (*mux.Router, error) {
 	r := mux.NewRouter()
 
-	mapRoutes := map[string]map[string]func(*Server, http.ResponseWriter, *http.Request, map[string]string) error{
+	mapRoutes := map[string][]map[string]RouteHandler{
 		"GET": {
-			"/version": getVersion,
-			"/resolve": getResolve,
+			{"/version": getVersion},
+			{"/resolve": getResolve},
 		},
 		"POST": {
-			"/{stack:.*}/{service:.*}/{process:.*}/start": postProcessStart,
-			"/{stack:.*}/{service:.*}/{process:.*}/stop":  postProcessStop,
-			"/{stack:.*}/{service:.*}/{process:.*}/tail":  postProcessTail,
-			// "/{stack:.*}/{service:.*}/start":              postServiceStart,
-			// "/{stack:.*}/{service:.*}/stop":               postServiceStop,
-			// "/{stack:.*}/start":                           postStackStart,
-			// "/{stack:.*}/stop":                            postStackStop,
-			// "/{stack:.*}/tail":                            postStackTail,
-			// "/{stack:.*}/restart":                         postStackRestart,
+			{"/{stack:.*}/{service:.*}/{process:.*}/start": postProcessStart},
+			{"/{stack:.*}/{service:.*}/{process:.*}/stop": postProcessStop},
+			{"/{stack:.*}/{service:.*}/{process:.*}/tail": postProcessTail},
+			{"/{stack:.*}/{service:.*}/start": postServiceStart},
+			{"/{stack:.*}/{service:.*}/stop": postServiceStop},
+			{"/{stack:.*}/restart": postStackRestart},
+			{"/{stack:.*}/start": postStackStart},
+			{"/{stack:.*}/stop": postStackStop},
+			{"/{stack:.*}/tail": postStackTail},
 		},
 	}
 
 	for method, routes := range mapRoutes {
-		for route, handlerFunc := range routes {
-			currentRoute := route
-			currentMethod := method
-			currentHandlerFunc := handlerFunc
-			f := func(w http.ResponseWriter, r *http.Request) {
-				if err := currentHandlerFunc(srv, w, r, mux.Vars(r)); err != nil {
-					httpError(w, err)
-				}
+		for _, mapRoute := range routes {
+			for route, handlerFunc := range mapRoute {
+				registerRoute(srv, r, method, route, handlerFunc)
 			}
-
-			r.Path(currentRoute).Methods(currentMethod).HandlerFunc(f)
 		}
 	}
 
 	return r, nil
+}
+
+func registerRoute(srv *Server, r *mux.Router, method, route string, handlerFunc RouteHandler) {
+	log.Printf("Registring %s %s", method, route)
+	f := func(w http.ResponseWriter, r *http.Request) {
+		if err := handlerFunc(srv, w, r, mux.Vars(r)); err != nil {
+			httpError(w, err)
+		}
+	}
+
+	r.Path(route).Methods(method).HandlerFunc(f)
 }
 
 func httpError(w http.ResponseWriter, err error) {
