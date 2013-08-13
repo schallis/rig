@@ -35,6 +35,8 @@ func NewCli(proto, addr string) *Cli {
 func (c *Cli) ParseCommand(args ...string) error {
 	cmds := map[string]func(args ...string) error{
 		"help":    c.CmdHelp,
+		"list":    c.CmdList,
+		"ps":      c.CmdPs,
 		"restart": c.CmdRestart,
 		"start":   c.CmdStart,
 		"stop":    c.CmdStop,
@@ -63,16 +65,26 @@ func (c *Cli) Subcmd(name, signature, description string) *flag.FlagSet {
 func (c *Cli) CmdHelp(args ...string) error {
 	help := "Usage: rig [OPTIONS] COMMAND DESCRIPTOR \n\nCommands:\n"
 	for _, cmd := range [][]string{
+		{"help", "Show rig help"},
+		{"list", "List stacks, services and processes"},
+		{"ps", "Show running processes status"},
 		{"restart", "Restart a stack, a service or a process"},
 		{"start", "Start a stack, a service or a process"},
 		{"stop", "Stop a stack, a service or a process"},
 		{"tail", "Tail logs of a stack, a service or a process"},
-		{"help", "Show rig help"},
 		{"version", "Show the rig version"},
 	} {
 		help += fmt.Sprintf("    %-10.10s%s\n", cmd[0], cmd[1])
 	}
 	fmt.Println(help)
+	return nil
+}
+
+func (c *Cli) CmdList(args ...string) error {
+	return nil
+}
+
+func (c *Cli) CmdPs(args ...string) error {
 	return nil
 }
 
