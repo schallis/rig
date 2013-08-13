@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/gocardless/rig"
 	"log"
 	"os"
 	"path"
@@ -53,7 +54,7 @@ func (s *Service) Stop() {
 	}
 }
 
-func (s *Service) SubscribeToOutput(c chan ProcessOutputMessage) {
+func (s *Service) SubscribeToOutput(c chan rig.ProcessOutputMessage) {
 	for _, p := range s.Processes {
 		p.outputDispatcher.Subscribe(c)
 	}

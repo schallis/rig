@@ -1,6 +1,10 @@
 package main
 
-import "sync"
+import (
+	"github.com/gocardless/rig"
+
+	"sync"
+)
 
 type Stack struct {
 	Name     string
@@ -29,7 +33,7 @@ func (s *Stack) Stop() {
 	}
 }
 
-func (s *Stack) SubscribeToOutput(c chan ProcessOutputMessage) {
+func (s *Stack) SubscribeToOutput(c chan rig.ProcessOutputMessage) {
 	for _, svc := range s.Services {
 		svc.SubscribeToOutput(c)
 	}

@@ -1,23 +1,15 @@
 package main
 
 import (
+	"github.com/gocardless/rig"
 	"github.com/gocardless/rig/utils"
 	"sync"
-	"time"
 )
-
-type ProcessOutputMessage struct {
-	Content string
-	Stack   string
-	Service string
-	Process string
-	Time    time.Time
-}
 
 type ProcessOutputSubscription struct {
 	id         string
 	dispatcher *ProcessOutputDispatcher
-	msgCh      chan ProcessOutputMessage
+	msgCh      chan rig.ProcessOutputMessage
 	endCh      chan bool
 }
 
@@ -38,7 +30,7 @@ func NewProcessOutputDispatcher() *ProcessOutputDispatcher {
 	}
 }
 
-func (d *ProcessOutputDispatcher) Subscribe(c chan ProcessOutputMessage) *ProcessOutputSubscription {
+func (d *ProcessOutputDispatcher) Subscribe(c chan rig.ProcessOutputMessage) *ProcessOutputSubscription {
 	s := &ProcessOutputSubscription{
 		id:         utils.GenerateId(),
 		dispatcher: d,
@@ -52,7 +44,7 @@ func (d *ProcessOutputDispatcher) Subscribe(c chan ProcessOutputMessage) *Proces
 	return s
 }
 
-func (d *ProcessOutputDispatcher) Publish(message ProcessOutputMessage) {
+func (d *ProcessOutputDispatcher) Publish(message rig.ProcessOutputMessage) {
 	d.RLock()
 	for _, s := range d.subscriptions {
 		s.msgCh <- message

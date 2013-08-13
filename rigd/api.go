@@ -143,7 +143,7 @@ func postProcessTail(srv *Server, w http.ResponseWriter, r *http.Request, vars m
 
 	w.Header().Set("Content-Type", "application/json")
 
-	subCh := make(chan ProcessOutputMessage)
+	subCh := make(chan rig.ProcessOutputMessage)
 	srv.TailProcess(d, subCh)
 
 	for {
@@ -195,7 +195,7 @@ func postServiceTail(srv *Server, w http.ResponseWriter, r *http.Request, vars m
 
 	w.Header().Set("Content-Type", "application/json")
 
-	subCh := make(chan ProcessOutputMessage)
+	subCh := make(chan rig.ProcessOutputMessage)
 	srv.TailService(d, subCh)
 
 	for {
@@ -247,7 +247,7 @@ func postStackTail(srv *Server, w http.ResponseWriter, r *http.Request, vars map
 
 	w.Header().Set("Content-Type", "application/json")
 
-	subCh := make(chan ProcessOutputMessage)
+	subCh := make(chan rig.ProcessOutputMessage)
 	srv.TailStack(d, subCh)
 
 	for {

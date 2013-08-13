@@ -78,7 +78,7 @@ func (srv *Server) StopStack(d *rig.Descriptor) error {
 	return nil
 }
 
-func (srv *Server) TailStack(d *rig.Descriptor, c chan ProcessOutputMessage) error {
+func (srv *Server) TailStack(d *rig.Descriptor, c chan rig.ProcessOutputMessage) error {
 	s, err := srv.GetStack(d)
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func (srv *Server) StopService(d *rig.Descriptor) error {
 	return nil
 }
 
-func (srv *Server) TailService(d *rig.Descriptor, c chan ProcessOutputMessage) error {
+func (srv *Server) TailService(d *rig.Descriptor, c chan rig.ProcessOutputMessage) error {
 	svc, err := srv.GetService(d)
 	if err != nil {
 		return err
@@ -140,7 +140,7 @@ func (srv *Server) StopProcess(d *rig.Descriptor) error {
 	return p.Stop()
 }
 
-func (srv *Server) TailProcess(d *rig.Descriptor, c chan ProcessOutputMessage) error {
+func (srv *Server) TailProcess(d *rig.Descriptor, c chan rig.ProcessOutputMessage) error {
 	p, err := srv.GetProcess(d)
 	if err != nil {
 		return err

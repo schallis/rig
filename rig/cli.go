@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 )
 
 type Cli struct {
@@ -309,7 +308,7 @@ func (c *Cli) stream(method, path string, data interface{}) error {
 	defer resp.Body.Close()
 	dec := json.NewDecoder(resp.Body)
 	for {
-		m := ProcessOutputMessage{}
+		m := rig.ProcessOutputMessage{}
 		if err := dec.Decode(&m); err == io.EOF {
 			break
 		} else if err != nil {
@@ -318,12 +317,4 @@ func (c *Cli) stream(method, path string, data interface{}) error {
 		fmt.Fprintf(c.out, "%+v\r\n", m)
 	}
 	return nil
-}
-
-type ProcessOutputMessage struct {
-	Content string
-	Stack   string
-	Service string
-	Process string
-	Time    time.Time
 }

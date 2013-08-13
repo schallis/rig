@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/gocardless/rig"
 	"io"
 	"log"
 	"os"
@@ -92,7 +93,7 @@ func (p *Process) Stop() error {
 	return nil
 }
 
-func (p *Process) SubscribeToOutput(c chan ProcessOutputMessage) {
+func (p *Process) SubscribeToOutput(c chan rig.ProcessOutputMessage) {
 	p.outputDispatcher.Subscribe(c)
 }
 
@@ -103,7 +104,7 @@ func (p *Process) setStatus(status ProcessStatus) {
 func (p *Process) logStream(stream io.ReadCloser, name string, wg *sync.WaitGroup) {
 	scanner := bufio.NewScanner(stream)
 	for scanner.Scan() {
-		msg := ProcessOutputMessage{
+		msg := rig.ProcessOutputMessage{
 			Content: scanner.Text(),
 			Stack:   p.Service.Stack.Name,
 			Service: p.Service.Name,
