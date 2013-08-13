@@ -36,7 +36,7 @@ func (s *Service) Start() {
 	for _, p := range s.Processes {
 		wg.Add(1)
 		go func(p *Process) {
-			if err := p.Start(s.Dir); err != nil {
+			if err := p.Start(); err != nil {
 				log.Printf("service: error from process %v (%v)\n", p.Name, err)
 			}
 			wg.Done()

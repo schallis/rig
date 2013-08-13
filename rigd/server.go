@@ -57,7 +57,7 @@ func (srv *Server) StartProcess(stack, service, process string) error {
 		return fmt.Errorf("process '%v' does not exist", process)
 	}
 
-	go p.Start(svc.Dir)
+	go s.Start()
 
 	return nil
 }

@@ -7,9 +7,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sync"
 	"syscall"
 	"time"
-	"sync"
 )
 
 const (
@@ -38,13 +38,13 @@ func NewProcess(name, cmd string, service *Service) *Process {
 	}
 }
 
-func (p *Process) Start(dir string) error {
+func (p *Process) Start() error {
 	if p.Status != Stopped {
 		return fmt.Errorf("process %v is already running", p.Name)
 	}
 
 	cmd := exec.Command("/bin/sh", "-c", p.Cmd)
-	cmd.Dir = dir
+	cmd.Dir = p.Service.Dir
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
