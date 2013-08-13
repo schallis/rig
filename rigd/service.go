@@ -53,6 +53,12 @@ func (s *Service) Stop() {
 	}
 }
 
+func (s *Service) SubscribeToOutput(c chan ProcessOutputMessage) {
+	for _, p := range s.Processes {
+		p.outputDispatcher.Subscribe(c)
+	}
+}
+
 func (s *Service) parseProcfile(path string) error {
 	f, err := os.Open(path)
 	if err != nil {

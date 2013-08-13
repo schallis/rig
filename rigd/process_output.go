@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/gocardless/rig/utils"
-	"time"
 	"sync"
+	"time"
 )
 
 type ProcessOutputMessage struct {

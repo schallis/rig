@@ -28,3 +28,9 @@ func (s *Stack) Stop() {
 		svc.Stop()
 	}
 }
+
+func (s *Stack) SubscribeToOutput(c chan ProcessOutputMessage) {
+	for _, svc := range s.Services {
+		svc.SubscribeToOutput(c)
+	}
+}

@@ -44,6 +44,7 @@ func makeRouter(srv *Server) (*mux.Router, error) {
 			{"/{stack:.*}/{service:.*}/{process:.*}/tail": postProcessTail},
 			{"/{stack:.*}/{service:.*}/start": postServiceStart},
 			{"/{stack:.*}/{service:.*}/stop": postServiceStop},
+			{"/{stack:.*}/{service:.*}/tail": postServiceTail},
 			{"/{stack:.*}/restart": postStackRestart},
 			{"/{stack:.*}/start": postStackStart},
 			{"/{stack:.*}/stop": postStackStop},
@@ -143,13 +144,11 @@ func postProcessTail(srv *Server, w http.ResponseWriter, r *http.Request, vars m
 	w.Header().Set("Content-Type", "application/json")
 
 	subCh := make(chan ProcessOutputMessage)
-	sub, err := srv.TailProcess(d, subCh)
-	if err != nil {
-		return err
-	}
+	srv.TailProcess(d, subCh)
+
 	for {
 		select {
-		case msg := <-sub.msgCh:
+		case msg := <-subCh:
 			b, err := json.Marshal(msg)
 			if err != nil {
 				return err
@@ -188,6 +187,32 @@ func postServiceStop(srv *Server, w http.ResponseWriter, r *http.Request, vars m
 	return nil
 }
 
+func postServiceTail(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+	d := buildDescriptor(vars)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	subCh := make(chan ProcessOutputMessage)
+	srv.TailService(d, subCh)
+
+	for {
+		select {
+		case msg := <-subCh:
+			b, err := json.Marshal(msg)
+			if err != nil {
+				return err
+			}
+			w.Write(b)
+			w.(http.Flusher).Flush()
+		}
+	}
+
+	return nil
+}
+
 func postStackStart(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
@@ -215,6 +240,28 @@ func postStackStop(srv *Server, w http.ResponseWriter, r *http.Request, vars map
 }
 
 func postStackTail(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+	d := buildDescriptor(vars)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	subCh := make(chan ProcessOutputMessage)
+	srv.TailStack(d, subCh)
+
+	for {
+		select {
+		case msg := <-subCh:
+			b, err := json.Marshal(msg)
+			if err != nil {
+				return err
+			}
+			w.Write(b)
+			w.(http.Flusher).Flush()
+		}
+	}
+
 	return nil
 }
 
