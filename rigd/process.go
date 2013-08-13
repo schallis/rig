@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"syscall"
 	"time"
+	"sync"
 )
 
 const (
@@ -45,7 +46,15 @@ func (p *Process) Start(dir string) error {
 	cmd := exec.Command("/bin/sh", "-c", p.Cmd)
 	cmd.Dir = dir
 
-	p.streamOutput(cmd)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	log.Printf("Starting process '%v'\n", p.Name)
 	if err := cmd.Start(); err != nil {
@@ -55,6 +64,13 @@ func (p *Process) Start(dir string) error {
 	p.Process = cmd.Process
 	p.Status = Running
 	defer p.setStatus(Stopped)
+
+	// Cmd.Wait() closes the fds, so we need to wait for reading to finish first
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go p.logStream(stdout, "stdout", &wg)
+	go p.logStream(stderr, "stderr", &wg)
+	wg.Wait()
 
 	if err := cmd.Wait(); err != nil {
 		log.Printf("Process '%v' failed: %v\n", p.Name, err)
@@ -84,22 +100,7 @@ func (p *Process) setStatus(status ProcessStatus) {
 	p.Status = status
 }
 
-func (p *Process) streamOutput(cmd *exec.Cmd) {
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	go p.logStream(stdout, "stdout")
-	go p.logStream(stderr, "stderr")
-}
-
-func (p *Process) logStream(stream io.ReadCloser, streamName string) {
+func (p *Process) logStream(stream io.ReadCloser, name string, wg *sync.WaitGroup) {
 	scanner := bufio.NewScanner(stream)
 	for scanner.Scan() {
 		msg := ProcessOutputMessage{
@@ -112,6 +113,8 @@ func (p *Process) logStream(stream io.ReadCloser, streamName string) {
 		p.outputDispatcher.Publish(msg)
 	}
 	if err := scanner.Err(); err != nil {
-		log.Printf("error reading %v: %v\n", streamName, err)
+		log.Printf("error reading %v: %v\n", name, err)
 	}
+
+	wg.Done()
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gocardless/rig/utils"
 	"time"
+	"sync"
 )
 
 type ProcessOutputMessage struct {
@@ -21,10 +22,13 @@ type ProcessOutputSubscription struct {
 }
 
 func (s *ProcessOutputSubscription) End() {
+	s.dispatcher.Lock()
 	delete(s.dispatcher.subscriptions, s.id)
+	s.dispatcher.Unlock()
 }
 
 type ProcessOutputDispatcher struct {
+	sync.RWMutex
 	subscriptions map[string]*ProcessOutputSubscription
 }
 
@@ -42,18 +46,24 @@ func (d *ProcessOutputDispatcher) Subscribe(c chan ProcessOutputMessage) *Proces
 		endCh:      make(chan bool),
 	}
 
+	d.Lock()
 	d.subscriptions[s.id] = s
+	d.Unlock()
 	return s
 }
 
 func (d *ProcessOutputDispatcher) Publish(message ProcessOutputMessage) {
+	d.RLock()
 	for _, s := range d.subscriptions {
 		s.msgCh <- message
 	}
+	d.RUnlock()
 }
 
 func (d *ProcessOutputDispatcher) End() {
+	d.RLock()
 	for _, s := range d.subscriptions {
 		s.endCh <- true
 	}
+	d.RUnlock()
 }
