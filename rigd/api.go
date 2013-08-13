@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gocardless/rig"
 	"github.com/gorilla/mux"
 	"log"
 	"net"
@@ -111,12 +112,10 @@ func postProcessStart(srv *Server, w http.ResponseWriter, r *http.Request, vars 
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
 	}
-	stack := vars["stack"]
-	service := vars["service"]
-	process := vars["process"]
+	d := buildDescriptor(vars)
 
-	if err := srv.StartProcess(stack, service, process); err != nil {
-		log.Println(err)
+	if err := srv.StartProcess(d); err != nil {
+		return err
 	}
 
 	return nil
@@ -126,12 +125,10 @@ func postProcessStop(srv *Server, w http.ResponseWriter, r *http.Request, vars m
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
 	}
-	stack := vars["stack"]
-	service := vars["service"]
-	process := vars["process"]
+	d := buildDescriptor(vars)
 
-	if err := srv.StopProcess(stack, service, process); err != nil {
-		log.Println(err)
+	if err := srv.StopProcess(d); err != nil {
+		return err
 	}
 
 	return nil
@@ -141,14 +138,12 @@ func postProcessTail(srv *Server, w http.ResponseWriter, r *http.Request, vars m
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
 	}
-	stack := vars["stack"]
-	service := vars["service"]
-	process := vars["process"]
+	d := buildDescriptor(vars)
 
 	w.Header().Set("Content-Type", "application/json")
 
 	subCh := make(chan ProcessOutputMessage)
-	sub, err := srv.TailProcess(subCh, stack, service, process)
+	sub, err := srv.TailProcess(d, subCh)
 	if err != nil {
 		return err
 	}
@@ -171,11 +166,10 @@ func postServiceStart(srv *Server, w http.ResponseWriter, r *http.Request, vars 
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
 	}
-	stack := vars["stack"]
-	service := vars["service"]
+	d := buildDescriptor(vars)
 
-	if err := srv.StartService(stack, service); err != nil {
-		log.Println(err)
+	if err := srv.StartService(d); err != nil {
+		return err
 	}
 
 	return nil
@@ -185,12 +179,11 @@ func postServiceStop(srv *Server, w http.ResponseWriter, r *http.Request, vars m
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
 	}
-	// stack := vars["stack"]
-	// service := vars["service"]
+	d := buildDescriptor(vars)
 
-	// if err := srv.StopService(stack, service); err != nil {
-	// 	log.Println(err)
-	// }
+	if err := srv.StopService(d); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -199,10 +192,10 @@ func postStackStart(srv *Server, w http.ResponseWriter, r *http.Request, vars ma
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
 	}
-	stack := vars["stack"]
+	d := buildDescriptor(vars)
 
-	if err := srv.StartStack(stack); err != nil {
-		log.Println(err)
+	if err := srv.StartStack(d); err != nil {
+		return err
 	}
 
 	return nil
@@ -212,15 +205,23 @@ func postStackStop(srv *Server, w http.ResponseWriter, r *http.Request, vars map
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
 	}
-	// stack := vars["stack"]
+	d := buildDescriptor(vars)
 
-	// if err := srv.StopStack(stack); err != nil {
-	// 	log.Println(err)
-	// }
+	if err := srv.StopStack(d); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func postStackTail(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	return nil
+}
+
+func buildDescriptor(vars map[string]string) *rig.Descriptor {
+	return &rig.Descriptor{
+		Stack:   vars["stack"],
+		Service: vars["service"],
+		Process: vars["process"],
+	}
 }

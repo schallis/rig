@@ -13,7 +13,7 @@ func NewStack(name string) *Stack {
 
 func (s *Stack) Start() {
 	var wg sync.WaitGroup
-	for _, svc := range(s.Services) {
+	for _, svc := range s.Services {
 		wg.Add(1)
 		go func(svc *Service) {
 			svc.Start()
@@ -23,3 +23,8 @@ func (s *Stack) Start() {
 	wg.Wait()
 }
 
+func (s *Stack) Stop() {
+	for _, svc := range s.Services {
+		svc.Stop()
+	}
+}

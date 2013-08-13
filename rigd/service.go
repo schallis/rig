@@ -45,6 +45,14 @@ func (s *Service) Start() {
 	wg.Wait()
 }
 
+func (s *Service) Stop() {
+	for _, p := range s.Processes {
+		if err := p.Stop(); err != nil {
+			log.Printf("service: error from process %v (%v)\n", p.Name, err)
+		}
+	}
+}
+
 func (s *Service) parseProcfile(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
