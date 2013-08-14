@@ -105,6 +105,35 @@ func Test_ResolvingContextualServiceWithProcess(t *testing.T) {
 	})
 }
 
+// === Sibling resolution tests
+
+func Test_ResolvingContextualSibling(t *testing.T) {
+	checkContextualResolution(t, ":service1", "projects/srv2", &rig.Descriptor{
+		Stack:   "stack1",
+		Service: "service1",
+	})
+}
+
+func Test_ResolvingContextualSiblingWithProcess(t *testing.T) {
+	checkContextualResolution(t, ":service1:process1", "projects/srv2", &rig.Descriptor{
+		Stack:   "stack1",
+		Service: "service1",
+		Process: "process1",
+	})
+}
+
+func Test_ResolvingInvalidContextualSibling(t *testing.T) {
+	withConfig(t, func(c *Config) {
+		dir := path.Join(c.Dir, "..", "projects", "srv2")
+		res := NewResolver(c, ":xservice", dir)
+
+		if _, err := res.GetDescriptor(); err == nil {
+			t.Error("Expected a resolution error")
+		}
+	})
+}
+
+
 // === Test helpers
 
 func checkSimpleResolution(t *testing.T, str string, example *rig.Descriptor) {

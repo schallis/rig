@@ -115,22 +115,43 @@ func (r *Resolver) parseStack(parts []string) error {
 func (r *Resolver) GetDescriptor() (*rig.Descriptor, error) {
 	d := &rig.Descriptor{}
 
-	// TODO handle special case of colon as first character (sibling)
 	parts := strings.SplitN(r.str, ":", 3)
 
-	if len(parts) == 1 && parts[0] == "" {
+	// Handle special case of colon as first character (sibling)
+	if len(r.str) > 0 && r.str[0] == ':' {
+		// Check that we're in a service directory
 		if curSvc := r.findServiceByDir(); curSvc != nil {
-			d.Stack = curSvc.Stack.Name
-			d.Service = curSvc.Name
-			return d, nil
+			// We are, set the stack and parse the string from the servce down
+			r.stack = curSvc.Stack
+			if err := r.parseService(curSvc.Stack, parts[1:]); err != nil {
+				return nil, err
+			}
+			// Everything went well, proceed to the build the descriptor below
+		} else {
+			// Trying to use the sibling specifier (: prefix) outside of a
+			// service directory
+			return nil, fmt.Errorf("Can't use sibling specifier here")
+		}
+	} else {
+		// Check for empty descriptors
+		if len(parts) == 1 && parts[0] == "" {
+			// An empty descriptor in a service directory is allowed
+			if curSvc := r.findServiceByDir(); curSvc != nil {
+				d.Stack = curSvc.Stack.Name
+				d.Service = curSvc.Name
+				return d, nil
+			}
+
+			return nil, fmt.Errorf("Empty descriptor")
 		}
 
-		return nil, fmt.Errorf("Empty descriptor")
+		// Non-empty descriptor, parse away!
+		if err := r.parseStack(parts); err != nil {
+			return nil, err
+		}
 	}
 
-	if err := r.parseStack(parts); err != nil {
-		return nil, err
-	}
+	// Build a descriptor from the results of the resolver
 	if r.stack != nil {
 		d.Stack = r.stack.Name
 	}
