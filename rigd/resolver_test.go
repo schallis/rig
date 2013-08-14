@@ -70,6 +70,14 @@ func Test_ResolvingDefaultService(t *testing.T) {
 	})
 }
 
+func Test_ResolvingDefaultServiceWithProcess(t *testing.T) {
+	checkSimpleResolution(t, "service3:process1", &rig.Descriptor{
+		Stack:   "default",
+		Service: "service3",
+		Process: "process1",
+	})
+}
+
 // === Contextual resolution tests
 
 func checkSimpleResolution(t *testing.T, str string, example *rig.Descriptor) {
