@@ -9,7 +9,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -17,8 +16,6 @@ type Cli struct {
 	client *http.Client
 	proto  string
 	addr   string
-	out    io.Writer
-	err    io.Writer
 }
 
 func NewCli(proto, addr string) *Cli {
@@ -26,8 +23,6 @@ func NewCli(proto, addr string) *Cli {
 		client: &http.Client{},
 		proto:  proto,
 		addr:   addr,
-		out:    os.Stdout,
-		err:    os.Stderr,
 	}
 	return cli
 }
@@ -318,6 +313,8 @@ func (c *Cli) stream(method, path string, data interface{}) error {
 	}
 
 	defer resp.Body.Close()
+
+	logger := NewProcessLogger()
 	dec := json.NewDecoder(resp.Body)
 	for {
 		m := rig.ProcessOutputMessage{}
@@ -326,7 +323,7 @@ func (c *Cli) stream(method, path string, data interface{}) error {
 		} else if err != nil {
 			return err
 		}
-		fmt.Fprintf(c.out, "%+v\r\n", m)
+		logger.Println(m)
 	}
 	return nil
 }
