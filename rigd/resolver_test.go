@@ -142,7 +142,7 @@ func checkSimpleResolution(t *testing.T, str string, example *rig.Descriptor) {
 
 		d, err := res.GetDescriptor()
 		if err != nil {
-			t.Errorf("Resolution error: %q", err)
+			t.Errorf("Resolution error: %v", err)
 			return
 		}
 
@@ -159,7 +159,7 @@ func checkContextualResolution(t *testing.T, str, dir string, example *rig.Descr
 
 		d, err := res.GetDescriptor()
 		if err != nil {
-			t.Errorf("Resolution error: %q", err)
+			t.Errorf("Resolution error: %v", err)
 			return
 		}
 

@@ -52,7 +52,6 @@ func (r *Resolver) possibleFirstParts() (map[string]Runnable, error) {
 
 	if curSvc := r.findServiceByDir(); curSvc != nil {
 		for name, process := range curSvc.Processes {
-			fmt.Printf("canon %q\n", name)
 			possibilities[name] = process
 		}
 	}
@@ -66,7 +65,7 @@ func (r *Resolver) parseService(s *Stack, parts []string) error {
 			r.service = svc
 			return r.parseProcess(svc, parts[1:])
 		} else {
-			return fmt.Errorf("Invalid process '%q'", parts)
+			return fmt.Errorf("Invalid process '%v'", parts)
 		}
 	}
 	return nil
@@ -77,7 +76,7 @@ func (r *Resolver) parseProcess(s *Service, parts []string) error {
 		if p, exists := s.Processes[parts[0]]; exists {
 			r.process = p
 		} else {
-			return fmt.Errorf("Invalid process '%q'", parts)
+			return fmt.Errorf("Invalid process '%v'", parts)
 		}
 	}
 	return nil
@@ -107,7 +106,7 @@ func (r *Resolver) parseStack(parts []string) error {
 		r.process = obj
 	case nil:
 		// Non-empty, invalid first part. There's nothing we can do.
-		return fmt.Errorf("Invalid descriptor '%q'", r.str)
+		return fmt.Errorf("Invalid descriptor '%v'", r.str)
 	}
 	return nil
 }
