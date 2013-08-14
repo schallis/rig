@@ -32,7 +32,7 @@ func NewService(name string, dir string, stack *Stack) (*Service, error) {
 	return s, nil
 }
 
-func (s *Service) Start() {
+func (s *Service) Start() error {
 	var wg sync.WaitGroup
 	for _, p := range s.Processes {
 		wg.Add(1)
@@ -44,14 +44,16 @@ func (s *Service) Start() {
 		}(p)
 	}
 	wg.Wait()
+	return nil
 }
 
-func (s *Service) Stop() {
+func (s *Service) Stop() error {
 	for _, p := range s.Processes {
 		if err := p.Stop(); err != nil {
 			log.Printf("service: error from process %v (%v)\n", p.Name, err)
 		}
 	}
+	return nil
 }
 
 func (s *Service) SubscribeToOutput(c chan rig.ProcessOutputMessage) {
