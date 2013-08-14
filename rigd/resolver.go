@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gocardless/rig"
+	"path/filepath"
 	"strings"
 )
 
@@ -19,7 +20,26 @@ func NewResolver(c *Config, str string, dir string) *Resolver {
 	return &Resolver{config: c, str: str, dir: dir}
 }
 
-func (r *Resolver) possibleFirstParts() map[string]Runnable {
+func canonicalise(path string) string {
+	// Hide errors, errors are boring
+	path, _ = filepath.Abs(path)
+	path, _ = filepath.EvalSymlinks(path)
+	return path
+}
+
+func (r *Resolver) findServiceByDir() *Service {
+	dirPath := canonicalise(r.dir)
+	for _, stack := range r.config.Stacks {
+		for _, svc := range stack.Services {
+			if canonicalise(svc.Dir) == dirPath {
+				return svc
+			}
+		}
+	}
+	return nil
+}
+
+func (r *Resolver) possibleFirstParts() (map[string]Runnable, error) {
 	possibilities := make(map[string]Runnable)
 
 	for name, stack := range r.config.Stacks {
@@ -30,7 +50,14 @@ func (r *Resolver) possibleFirstParts() map[string]Runnable {
 		possibilities[name] = service
 	}
 
-	return possibilities
+	if curSvc := r.findServiceByDir(); curSvc != nil {
+		for name, process := range curSvc.Processes {
+			fmt.Printf("canon %q\n", name)
+			possibilities[name] = process
+		}
+	}
+
+	return possibilities, nil
 }
 
 func (r *Resolver) parseService(s *Stack, parts []string) error {
@@ -57,7 +84,11 @@ func (r *Resolver) parseProcess(s *Service, parts []string) error {
 }
 
 func (r *Resolver) parseStack(parts []string) error {
-	possibilities := r.possibleFirstParts()
+	possibilities, err := r.possibleFirstParts()
+	if err != nil {
+		return err
+	}
+
 	switch obj := possibilities[parts[0]].(type) {
 	case *Stack:
 		r.stack = obj
@@ -86,6 +117,17 @@ func (r *Resolver) GetDescriptor() (*rig.Descriptor, error) {
 
 	// TODO handle special case of colon as first character (sibling)
 	parts := strings.SplitN(r.str, ":", 3)
+
+	if len(parts) == 1 && parts[0] == "" {
+		if curSvc := r.findServiceByDir(); curSvc != nil {
+			d.Stack = curSvc.Stack.Name
+			d.Service = curSvc.Name
+			return d, nil
+		}
+
+		return nil, fmt.Errorf("Empty descriptor")
+	}
+
 	if err := r.parseStack(parts); err != nil {
 		return nil, err
 	}

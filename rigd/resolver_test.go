@@ -1,8 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gocardless/rig"
+	"io/ioutil"
+	"os"
+	"path"
 	"testing"
 )
 
@@ -17,11 +19,13 @@ func Test_ResolvingCompleteDescriptor(t *testing.T) {
 }
 
 func Test_ResolvingDescriptorWithInvalidProcess(t *testing.T) {
-	res := NewResolver(buildConfig(), "stack1:service1:xprocess", "/")
+	withConfig(t, func(c *Config) {
+		res := NewResolver(c, "stack1:service1:xprocess", "/")
 
-	if _, err := res.GetDescriptor(); err == nil {
-		t.Error("Expected a resolution error")
-	}
+		if _, err := res.GetDescriptor(); err == nil {
+			t.Error("Expected a resolution error")
+		}
+	})
 }
 
 func Test_ResolvingDescriptorWithoutProcess(t *testing.T) {
@@ -32,11 +36,13 @@ func Test_ResolvingDescriptorWithoutProcess(t *testing.T) {
 }
 
 func Test_ResolvingDescriptorWithInvalidService(t *testing.T) {
-	res := NewResolver(buildConfig(), "stack1:xservice", "/")
+	withConfig(t, func(c *Config) {
+		res := NewResolver(c, "stack1:xservice", "/")
 
-	if _, err := res.GetDescriptor(); err == nil {
-		t.Error("Expected a resolution error")
-	}
+		if _, err := res.GetDescriptor(); err == nil {
+			t.Error("Expected a resolution error")
+		}
+	})
 }
 
 func Test_ResolvingDescriptorWithoutService(t *testing.T) {
@@ -46,19 +52,23 @@ func Test_ResolvingDescriptorWithoutService(t *testing.T) {
 }
 
 func Test_ResolvingDescriptorWithInvalidStack(t *testing.T) {
-	res := NewResolver(buildConfig(), "xstack", "/")
+	withConfig(t, func(c *Config) {
+		res := NewResolver(c, "xstack", "/")
 
-	if _, err := res.GetDescriptor(); err == nil {
-		t.Error("Expected a resolution error")
-	}
+		if _, err := res.GetDescriptor(); err == nil {
+			t.Error("Expected a resolution error")
+		}
+	})
 }
 
 func Test_ResolvingBlankDescriptor(t *testing.T) {
-	res := NewResolver(buildConfig(), "", "/")
+	withConfig(t, func(c *Config) {
+		res := NewResolver(c, "", "/")
 
-	if _, err := res.GetDescriptor(); err == nil {
-		t.Error("Expected a resolution error")
-	}
+		if _, err := res.GetDescriptor(); err == nil {
+			t.Error("Expected a resolution error")
+		}
+	})
 }
 
 // === Default stack resolution tests
@@ -80,59 +90,103 @@ func Test_ResolvingDefaultServiceWithProcess(t *testing.T) {
 
 // === Contextual resolution tests
 
-func checkSimpleResolution(t *testing.T, str string, example *rig.Descriptor) {
-	res := NewResolver(buildConfig(), str, "/")
-
-	d, err := res.GetDescriptor()
-	if err != nil {
-		t.Error("Unexpected resolution error")
-		return
-	}
-
-	if *d != *example {
-		t.Errorf("Expected %+v, got %+v", example, d)
-	}
+func Test_ResolvingContextualService(t *testing.T) {
+	checkContextualResolution(t, "", "projects/srv2", &rig.Descriptor{
+		Stack:   "stack1",
+		Service: "service2",
+	})
 }
 
-func checkContextualResolution(t *testing.T, str string, example *rig.Descriptor) {
-	res := NewResolver(NewConfig(), str, "/")
+func Test_ResolvingContextualServiceWithProcess(t *testing.T) {
+	checkContextualResolution(t, "process1", "projects/srv2", &rig.Descriptor{
+		Stack:   "stack1",
+		Service: "service2",
+		Process: "process1",
+	})
+}
 
-	d, err := res.GetDescriptor()
-	if err != nil {
-		t.Error("Unexpected resolution error")
-	}
+// === Test helpers
 
-	if *d != *example {
-		t.Errorf("Expected %+v, got %+v", example, d)
-	}
+func checkSimpleResolution(t *testing.T, str string, example *rig.Descriptor) {
+	withConfig(t, func(c *Config) {
+		res := NewResolver(c, str, "/")
+
+		d, err := res.GetDescriptor()
+		if err != nil {
+			t.Errorf("Resolution error: %q", err)
+			return
+		}
+
+		if *d != *example {
+			t.Errorf("Expected %+v, got %+v", example, d)
+		}
+	})
+}
+
+func checkContextualResolution(t *testing.T, str, dir string, example *rig.Descriptor) {
+	withConfig(t, func(c *Config) {
+		dir = path.Join(c.Dir, "..", dir)
+		res := NewResolver(c, str, dir)
+
+		d, err := res.GetDescriptor()
+		if err != nil {
+			t.Errorf("Resolution error: %q", err)
+			return
+		}
+
+		if *d != *example {
+			t.Errorf("Expected %+v, got %+v", example, d)
+		}
+	})
 }
 
 // === Config setup helpers
 
-func buildConfig() *Config {
-	config := NewConfig()
+type testFunc func(*Config)
 
-	stack := NewStack("stack1")
-	config.Stacks[stack.Name] = stack
-	addService(stack, 1)
-	addService(stack, 2)
+func withConfig(t *testing.T, f testFunc) *Config {
+	tmpDir, err := ioutil.TempDir("", "resolver-test")
+	if err != nil {
+		t.Fatal("creating temp dir:", err)
+	}
+	//defer os.RemoveAll(tmpDir)
 
-	defaultStack := NewStack("default")
-	config.Stacks["default"] = defaultStack
-	addService(defaultStack, 3)
+	projectDir := path.Join(tmpDir, "projects")
+	os.Mkdir(projectDir, 0755)
+	setupProjects(projectDir)
+
+	configDir := path.Join(tmpDir, "config")
+	os.Mkdir(configDir, 0755)
+
+	os.Mkdir(path.Join(configDir, "stack1"), 0755)
+	os.Symlink(
+		path.Join(projectDir, "srv1"),
+		path.Join(configDir, "stack1", "service1"),
+	)
+	os.Symlink(
+		path.Join(projectDir, "srv2"),
+		path.Join(configDir, "stack1", "service2"),
+	)
+
+	os.Symlink(path.Join(projectDir, "srv3"), path.Join(configDir, "service3"))
+
+	config := NewConfigFromDir(configDir)
+
+	os.Stdout.Sync()
+	f(config)
 
 	return config
 }
 
-func addService(stack *Stack, num int) {
-	service := &Service{
-		Name:      fmt.Sprintf("service%d", num),
-		Dir:       fmt.Sprintf("/projects/srv%d", num),
-		Stack:     stack,
-		Processes: make(map[string]*Process),
-	}
-	stack.Services[service.Name] = service
+func setupProjects(dir string) {
+	procfile := []byte("process1: echo hello\n")
 
-	process := NewProcess("process1", "echo hello", service)
-	service.Processes[process.Name] = process
+	os.Mkdir(path.Join(dir, "srv1"), 0755)
+	ioutil.WriteFile(path.Join(dir, "srv1", "Procfile"), procfile, 0644)
+
+	os.Mkdir(path.Join(dir, "srv2"), 0755)
+	ioutil.WriteFile(path.Join(dir, "srv2", "Procfile"), procfile, 0644)
+
+	os.Mkdir(path.Join(dir, "srv3"), 0755)
+	ioutil.WriteFile(path.Join(dir, "srv3", "Procfile"), procfile, 0644)
 }
