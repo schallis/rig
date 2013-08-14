@@ -35,8 +35,10 @@ func makeRouter(srv *Server) (*mux.Router, error) {
 
 	mapRoutes := map[string][]map[string]RouteHandler{
 		"GET": {
-			{"/version": getVersion},
+			{"/list": getList},
+			{"/ps": getPs},
 			{"/resolve": getResolve},
+			{"/version": getVersion},
 		},
 		"POST": {
 			{"/{stack:.*}/{service:.*}/{process:.*}/start": postProcessStart},
@@ -91,7 +93,54 @@ func writeJSON(w http.ResponseWriter, b []byte) {
 	w.Write(b)
 }
 
+func getList(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	stacks := make(map[string]map[string][]string)
+	for stackName, s := range srv.Stacks {
+		stacks[stackName] = make(map[string][]string)
+		for serviceName, svc := range s.Services {
+			processes := []string{}
+			for processName, _ := range svc.Processes {
+				processes = append(processes, processName)
+			}
+			stacks[stackName][serviceName] = processes
+		}
+	}
+
+	b, err := json.Marshal(stacks)
+	if err != nil {
+		return err
+	}
+	writeJSON(w, b)
+
+	return nil
+}
+
+func getPs(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	return nil
+}
+
 func getResolve(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+
+	if err := r.ParseForm(); err != nil {
+		return err
+	}
+
+	descriptor := r.Form.Get("descriptor")
+	pwd := r.Form.Get("pwd")
+
+	d, err := srv.Resolve(descriptor, pwd)
+	if err != nil {
+		return err
+	}
+
+	b, err := json.Marshal(d)
+	if err != nil {
+		return err
+	}
+	writeJSON(w, b)
 	return nil
 }
 

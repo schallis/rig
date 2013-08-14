@@ -6,11 +6,15 @@ import (
 )
 
 type Server struct {
+	Config *Config
 	Stacks map[string]*Stack
 }
 
-func NewServer(stacks map[string]*Stack) (*Server, error) {
-	srv := &Server{Stacks: stacks}
+func NewServer(config *Config) (*Server, error) {
+	srv := &Server{
+		Config: config,
+		Stacks: config.Stacks,
+	}
 	return srv, nil
 }
 
@@ -150,8 +154,15 @@ func (srv *Server) TailProcess(d *rig.Descriptor, c chan rig.ProcessOutputMessag
 	return nil
 }
 
-func (s *Server) Resolve() error {
-	return nil
+func (srv *Server) Resolve(str, pwd string) (*rig.Descriptor, error) {
+	res := NewResolver(srv.Config, str, pwd)
+
+	d, err := res.GetDescriptor()
+	if err != nil {
+		return nil, err
+	}
+
+	return d, err
 }
 
 func (srv *Server) Version() rig.ApiVersion {

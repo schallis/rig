@@ -9,7 +9,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
+	"net/url"
+	"os"
 )
 
 type Cli struct {
@@ -62,7 +63,7 @@ func (c *Cli) CmdHelp(args ...string) error {
 	for _, cmd := range [][]string{
 		{"help", "Show rig help"},
 		{"list", "List stacks, services and processes"},
-		{"ps", "Show running processes status"},
+		{"ps", "Show running processes"},
 		{"restart", "Restart a stack, a service or a process"},
 		{"start", "Start a stack, a service or a process"},
 		{"stop", "Stop a stack, a service or a process"},
@@ -76,10 +77,68 @@ func (c *Cli) CmdHelp(args ...string) error {
 }
 
 func (c *Cli) CmdList(args ...string) error {
+	cmd := c.Subcmd("list", "", "List stacks, services and processes")
+	if err := cmd.Parse(args); err != nil {
+		return nil
+	}
+
+	if cmd.NArg() > 0 {
+		cmd.Usage()
+		return nil
+	}
+
+	body, _, err := c.call("GET", "/list", nil)
+	if err != nil {
+		return err
+	}
+
+	var stacks map[string]map[string][]string
+	err = json.Unmarshal(body, &stacks)
+	if err != nil {
+		fmt.Printf("Error unmarshal: body: %s, err: %s\n", body, err)
+		return err
+	}
+
+	fmt.Println("Stack list:\n")
+	for stackName, s := range stacks {
+		fmt.Printf("\x1b[1m- %s :\x1b[0m\n", stackName)
+		for serviceName, svc := range s {
+			fmt.Printf("      %s :\n", serviceName)
+			for _, processName := range svc {
+				fmt.Printf("        %s\n", processName)
+			}
+		}
+	}
+	fmt.Println("")
+
 	return nil
 }
 
 func (c *Cli) CmdPs(args ...string) error {
+	cmd := c.Subcmd("ps", "", "Show running processes")
+	if err := cmd.Parse(args); err != nil {
+		return nil
+	}
+
+	if cmd.NArg() > 0 {
+		cmd.Usage()
+		return nil
+	}
+
+	body, _, err := c.call("GET", "/ps", nil)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(body)
+	// var out rig.ApiVersion
+	// err = json.Unmarshal(body, &out)
+	// if err != nil {
+	// 	fmt.Printf("Error unmarshal: body: %s, err: %s\n", body, err)
+	// 	return err
+	// }
+	// fmt.Println("Version:", out.Version)
+
 	return nil
 }
 
@@ -93,33 +152,11 @@ func (c *Cli) CmdStart(args ...string) error {
 		return nil
 	}
 
-	if cmd.NArg() < 1 {
-		cmd.Usage()
-		return nil
+	path, err := c.resolve(cmd.Arg(0))
+	if err != nil {
+		return err
 	}
-
-	descriptor := strings.Split(cmd.Arg(0), ":")
-	l := len(descriptor)
-
-	var stack, service, process string
-	var path string
-
-	stack = descriptor[0]
-	path = fmt.Sprintf("/%s/start", stack)
-
-	if l > 1 {
-		service = descriptor[1]
-		path = fmt.Sprintf("/%s/%s/start", stack, service)
-	}
-	if l > 2 {
-		process = descriptor[2]
-		path = fmt.Sprintf("/%s/%s/%s/start", stack, service, process)
-	}
-
-	// resolveBody, _, err := c.call("POST", "/resolve", nil)
-	// if err != nil {
-	// 	return err
-	// }
+	path += "/start"
 
 	body, _, err := c.call("POST", path, nil)
 	if err != nil {
@@ -137,33 +174,11 @@ func (c *Cli) CmdStop(args ...string) error {
 		return nil
 	}
 
-	if cmd.NArg() < 1 {
-		cmd.Usage()
-		return nil
+	path, err := c.resolve(cmd.Arg(0))
+	if err != nil {
+		return err
 	}
-
-	descriptor := strings.Split(cmd.Arg(0), ":")
-	l := len(descriptor)
-
-	var stack, service, process string
-	var path string
-
-	stack = descriptor[0]
-	path = fmt.Sprintf("/%s/stop", stack)
-
-	if l > 1 {
-		service = descriptor[1]
-		path = fmt.Sprintf("/%s/%s/stop", stack, service)
-	}
-	if l > 2 {
-		process = descriptor[2]
-		path = fmt.Sprintf("/%s/%s/%s/stop", stack, service, process)
-	}
-
-	// resolveBody, _, err := c.call("POST", "/resolve", nil)
-	// if err != nil {
-	// 	return err
-	// }
+	path += "/stop"
 
 	body, _, err := c.call("POST", path, nil)
 	if err != nil {
@@ -181,35 +196,13 @@ func (c *Cli) CmdTail(args ...string) error {
 		return nil
 	}
 
-	if cmd.NArg() < 1 {
-		cmd.Usage()
-		return nil
+	path, err := c.resolve(cmd.Arg(0))
+	if err != nil {
+		return err
 	}
+	path += "/tail"
 
-	descriptor := strings.Split(cmd.Arg(0), ":")
-	l := len(descriptor)
-
-	var stack, service, process string
-	var path string
-
-	stack = descriptor[0]
-	path = fmt.Sprintf("/%s/tail", stack)
-
-	if l > 1 {
-		service = descriptor[1]
-		path = fmt.Sprintf("/%s/%s/tail", stack, service)
-	}
-	if l > 2 {
-		process = descriptor[2]
-		path = fmt.Sprintf("/%s/%s/%s/tail", stack, service, process)
-	}
-
-	// resolveBody, _, err := c.call("POST", "/resolve", nil)
-	// if err != nil {
-	// 	return err
-	// }
-
-	err := c.stream("POST", path, nil)
+	err = c.stream("POST", path, nil)
 	if err != nil {
 		return err
 	}
@@ -242,6 +235,41 @@ func (c *Cli) CmdVersion(args ...string) error {
 	fmt.Println("Version:", out.Version)
 
 	return nil
+}
+
+func (c *Cli) resolve(descriptor string) (string, error) {
+	v := url.Values{}
+	v.Set("descriptor", descriptor)
+	if pwd, err := os.Getwd(); err == nil {
+		v.Set("pwd", pwd)
+	}
+
+	resolveBody, _, err := c.call("GET", "/resolve?"+v.Encode(), nil)
+	if err != nil {
+		return "", err
+	}
+
+	var d rig.Descriptor
+	err = json.Unmarshal(resolveBody, &d)
+	if err != nil {
+		return "", fmt.Errorf("Error unmarshal: body: %s, err: %s\n", resolveBody, err)
+	}
+
+	if d.Stack == "" {
+		return "", fmt.Errorf("Error : resolver couldn't find stack")
+	}
+
+	path := fmt.Sprintf("/%s", d.Stack)
+
+	if d.Service != "" {
+		path += fmt.Sprintf("/%s", d.Service)
+	}
+
+	if d.Process != "" {
+		path += fmt.Sprintf("/%s", d.Process)
+	}
+
+	return path, nil
 }
 
 func (c *Cli) call(method, path string, data interface{}) ([]byte, int, error) {

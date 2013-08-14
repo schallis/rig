@@ -2,8 +2,8 @@ package main
 
 import (
 	"io/ioutil"
-	"os"
 	"log"
+	"os"
 	"path"
 )
 
@@ -33,11 +33,11 @@ func loadStackServices(stack *Stack, dir string) {
 		log.Panicf("error: listing config dir %v (%v)\n", dir, err)
 	}
 
-	for _, entry := range(entries) {
+	for _, entry := range entries {
 		entryPath := path.Join(dir, entry.Name())
 
 		// If we find a symlink, add to the stack as a service
-		if entry.Mode() & os.ModeSymlink != 0 {
+		if entry.Mode()&os.ModeSymlink != 0 {
 			err := addServiceToStack(entryPath, entry, stack)
 			if err != nil {
 				log.Panicln("error:", err)
@@ -63,7 +63,7 @@ func NewConfigFromDir(configDir string) *Config {
 		log.Panicf("error: listing config dir %v (%v)\n", configDir, err)
 	}
 
-	for _, entry := range(entries) {
+	for _, entry := range entries {
 		entryPath := path.Join(configDir, entry.Name())
 
 		// If we find a directory in the config dir, add it as a stack
@@ -76,4 +76,3 @@ func NewConfigFromDir(configDir string) *Config {
 
 	return config
 }
-

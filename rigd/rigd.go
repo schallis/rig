@@ -40,7 +40,7 @@ func launchServer(configDir string) {
 		os.Exit(0)
 	}()
 
-	srv, err := NewServer(config.Stacks)
+	srv, err := NewServer(config)
 	if err != nil {
 		log.Fatal(err)
 	}
