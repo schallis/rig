@@ -116,6 +116,31 @@ func getList(srv *Server, w http.ResponseWriter, r *http.Request, vars map[strin
 }
 
 func getPs(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	stacks := make(map[string]map[string][]*rig.ApiProcess)
+	for stackName, s := range srv.Stacks {
+		stacks[stackName] = make(map[string][]*rig.ApiProcess)
+		for serviceName, svc := range s.Services {
+			processes := []*rig.ApiProcess{}
+			for _, p := range svc.Processes {
+				if p.Process != nil {
+					apiProcess := &rig.ApiProcess{
+						Name:   p.Name,
+						Pid:    p.Process.Pid,
+						Status: int(p.Status),
+					}
+					processes = append(processes, apiProcess)
+				}
+			}
+			stacks[stackName][serviceName] = processes
+		}
+	}
+
+	b, err := json.Marshal(stacks)
+	if err != nil {
+		return err
+	}
+	writeJSON(w, b)
+
 	return nil
 }
 

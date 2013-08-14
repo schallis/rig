@@ -130,14 +130,27 @@ func (c *Cli) CmdPs(args ...string) error {
 		return err
 	}
 
-	fmt.Println(body)
-	// var out rig.ApiVersion
-	// err = json.Unmarshal(body, &out)
-	// if err != nil {
-	// 	fmt.Printf("Error unmarshal: body: %s, err: %s\n", body, err)
-	// 	return err
-	// }
-	// fmt.Println("Version:", out.Version)
+	var stacks map[string]map[string][]*rig.ApiProcess
+	err = json.Unmarshal(body, &stacks)
+	if err != nil {
+		fmt.Printf("Error unmarshal: body: %s, err: %s\n", body, err)
+		return err
+	}
+
+	fmt.Println("PID    Name           Status")
+	for stackName, s := range stacks {
+		for serviceName, svc := range s {
+			for _, process := range svc {
+				var status string
+				if process.Status == 1 {
+					status = "Running"
+				} else {
+					status = "Not runnig"
+				}
+				fmt.Printf("%d  %s:%s:%s       %s\n", process.Pid, stackName, serviceName, process.Name, status)
+			}
+		}
+	}
 
 	return nil
 }

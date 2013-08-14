@@ -8,6 +8,12 @@ type ApiVersion struct {
 	Version string
 }
 
+type ApiProcess struct {
+	Name   string
+	Pid    int
+	Status int
+}
+
 type Descriptor struct {
 	Stack   string
 	Service string
