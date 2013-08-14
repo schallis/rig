@@ -41,7 +41,7 @@ func NewProcess(name, cmd string, service *Service) *Process {
 
 func (p *Process) Start() error {
 	if p.Status != Stopped {
-		return fmt.Errorf("process %s:%s is already running", p.Service, p.Name)
+		return fmt.Errorf("process %s:%s is already running", p.Service.Name, p.Name)
 	}
 
 	cmd := exec.Command("/bin/sh", "-c", p.Cmd)
@@ -57,9 +57,9 @@ func (p *Process) Start() error {
 		log.Fatal(err)
 	}
 
-	log.Printf("Starting process '%s:%s'\n", p.Service, p.Name)
+	log.Printf("Starting process '%s:%s'\n", p.Service.Name, p.Name)
 	if err := cmd.Start(); err != nil {
-		log.Printf("Error starting process '%s:%s': %v\n", p.Service, p.Name, err)
+		log.Printf("Error starting process '%s:%s': %v\n", p.Service.Name, p.Name, err)
 		return err
 	}
 	p.Process = cmd.Process
@@ -74,10 +74,10 @@ func (p *Process) Start() error {
 	wg.Wait()
 
 	if err := cmd.Wait(); err != nil {
-		log.Printf("Process '%s:%s' failed: %v\n", p.Service, p.Name, err)
+		log.Printf("Process '%s:%s' failed: %v\n", p.Service.Name, p.Name, err)
 		return err
 	} else {
-		log.Printf("Process '%s:%s' stopped\n", p.Service, p.Name)
+		log.Printf("Process '%s:%s' stopped\n", p.Service.Name, p.Name)
 	}
 
 	return nil
