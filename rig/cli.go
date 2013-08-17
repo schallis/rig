@@ -145,7 +145,7 @@ func (c *Cli) CmdPs(args ...string) error {
 				if process.Status == 1 {
 					status = "Running"
 				} else {
-					status = "Not runnig"
+					status = "Not running"
 				}
 				fmt.Printf("%d  %s:%s:%s       %s\n", process.Pid, stackName, serviceName, process.Name, status)
 			}
