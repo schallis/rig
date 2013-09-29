@@ -161,6 +161,7 @@ func (c *Cli) CmdRestart(args ...string) error {
 
 func (c *Cli) CmdStart(args ...string) error {
 	cmd := c.Subcmd("start", "DESCRIPTOR", "Start a stack, a service or a process")
+	tail := cmd.Bool("tail", false, "Tail the logs after starting")
 	if err := cmd.Parse(args); err != nil {
 		return nil
 	}
@@ -169,14 +170,21 @@ func (c *Cli) CmdStart(args ...string) error {
 	if err != nil {
 		return err
 	}
-	path += "/start"
+	startPath := path + "/start"
 
-	body, _, err := c.call("POST", path, nil)
+	_, _, err = c.call("POST", startPath, nil)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(body)
+	if *tail {
+		tailPath := path + "/tail"
+
+		err = c.stream("POST", tailPath, nil)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
