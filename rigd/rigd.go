@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"flag"
+	"github.com/gocardless/rig/utils"
 	"log"
 	"os"
 	"os/signal"
-	//"sync"
 	"syscall"
 )
 
@@ -15,22 +15,20 @@ var (
 	defaultAddr  string = "0.0.0.0:9696"
 )
 
-type ProcessConfig struct {
-	Command string
-	Dir     string
-}
-
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "usage: %v configdir\n", os.Args[0])
-		os.Exit(1)
-	}
+	// config flag
+	configFlag := flag.String("-c", "~/.config/rig/config.json", "Path to config")
+	flag.Parse()
 
-	launchServer(os.Args[1])
+	configFilename := utils.ExpandPath(*configFlag)
+	launchServer(configFilename)
 }
 
-func launchServer(configDir string) {
-	config := NewConfigFromDir(configDir)
+func launchServer(configFilename string) {
+	config, err := LoadConfigFromFile(configFilename)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill, os.Signal(syscall.SIGTERM))
@@ -40,7 +38,7 @@ func launchServer(configDir string) {
 		os.Exit(0)
 	}()
 
-	srv, err := NewServer(config)
+	srv, err := NewServerFromConfig(config)
 	if err != nil {
 		log.Fatal(err)
 	}

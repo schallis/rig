@@ -10,12 +10,37 @@ type Server struct {
 	Stacks map[string]*Stack
 }
 
-func NewServer(config *Config) (*Server, error) {
+func NewServerFromConfig(config *Config) (*Server, error) {
 	srv := &Server{
 		Config: config,
-		Stacks: config.Stacks,
+		Stacks: map[string]*Stack{},
+	}
+	if err := srv.loadConfig(); err != nil {
+		return nil, err
 	}
 	return srv, nil
+}
+
+func (srv *Server) loadConfig() error {
+	for name, config := range srv.Config.Stacks {
+		stack := NewStack(name)
+		if err := loadServices(stack, config); err != nil {
+			return err
+		}
+		srv.Stacks[name] = stack
+	}
+	return nil
+}
+
+func loadServices(stack *Stack, stackConfig *StackConfig) error {
+	for name, config := range stackConfig.Services {
+		service, err := NewService(name, config.Dir, stack)
+		if err != nil {
+			return err
+		}
+		stack.Services[name] = service
+	}
+	return nil
 }
 
 func (srv *Server) GetStack(d *rig.Descriptor) (*Stack, error) {
@@ -155,7 +180,7 @@ func (srv *Server) TailProcess(d *rig.Descriptor, c chan rig.ProcessOutputMessag
 }
 
 func (srv *Server) Resolve(str, pwd string) (*rig.Descriptor, error) {
-	res := NewResolver(srv.Config, str, pwd)
+	res := NewResolver(srv.Stacks, str, pwd)
 
 	d, err := res.GetDescriptor()
 	if err != nil {
