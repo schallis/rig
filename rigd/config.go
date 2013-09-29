@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"io/ioutil"
 	"log"
 	"os"
@@ -64,8 +65,11 @@ func LoadConfigFromFile(filename string) (*Config, error) {
 }
 
 func createDefaultConfig(filename string) error {
-	err := writeConfig(filename, defaultConfig)
-	if err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
+		return err
+	}
+
+	if err := writeConfig(filename, defaultConfig); err != nil {
 		return err
 	}
 	return nil
