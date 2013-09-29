@@ -1,3 +1,5 @@
+## WARNING: This project is in development and not ready for use.
+
 <img src="http://f.cl.ly/items/0A362Z0H2C272k1O1832/rig-logo.jpg" width="200"/>
 
 Run and manage services on your development machine.
