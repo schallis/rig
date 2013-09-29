@@ -25,11 +25,6 @@ func main() {
 }
 
 func launchServer(configFilename string) {
-	config, err := LoadConfigFromFile(configFilename)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill, os.Signal(syscall.SIGTERM))
 	go func() {
@@ -38,8 +33,8 @@ func launchServer(configFilename string) {
 		os.Exit(0)
 	}()
 
-	srv, err := NewServerFromConfig(config)
-	if err != nil {
+	srv := NewServer()
+	if err := srv.LoadConfig(configFilename); err != nil {
 		log.Fatal(err)
 	}
 

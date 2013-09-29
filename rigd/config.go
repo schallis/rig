@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 const defaultConfig = `

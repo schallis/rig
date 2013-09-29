@@ -33,6 +33,7 @@ func (c *Cli) ParseCommand(args ...string) error {
 		"help":    c.CmdHelp,
 		"list":    c.CmdList,
 		"ps":      c.CmdPs,
+		"reload":  c.CmdReload,
 		"restart": c.CmdRestart,
 		"start":   c.CmdStart,
 		"stop":    c.CmdStop,
@@ -65,6 +66,7 @@ func (c *Cli) CmdHelp(args ...string) error {
 		{"list", "List stacks, services and processes"},
 		{"ps", "Show running processes"},
 		{"restart", "Restart a stack, a service or a process"},
+		{"reload", "Reload configuration"},
 		{"start", "Start a stack, a service or a process"},
 		{"stop", "Stop a stack, a service or a process"},
 		{"tail", "Tail logs of a stack, a service or a process"},
@@ -156,6 +158,20 @@ func (c *Cli) CmdPs(args ...string) error {
 }
 
 func (c *Cli) CmdRestart(args ...string) error {
+	return nil
+}
+
+func (c *Cli) CmdReload(args ...string) error {
+	cmd := c.Subcmd("reload", "", "Reload configuration")
+	if err := cmd.Parse(args); err != nil {
+		return nil
+	}
+
+	_, _, err := c.call("POST", "/config/reload", nil)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gocardless/rig"
+	"log"
 )
 
 type Server struct {
@@ -10,18 +11,19 @@ type Server struct {
 	Stacks map[string]*Stack
 }
 
-func NewServerFromConfig(config *Config) (*Server, error) {
-	srv := &Server{
-		Config: config,
+func NewServer() *Server {
+	return &Server{
 		Stacks: map[string]*Stack{},
 	}
-	if err := srv.loadConfig(); err != nil {
-		return nil, err
-	}
-	return srv, nil
 }
 
-func (srv *Server) loadConfig() error {
+func (srv *Server) LoadConfig(configFilename string) error {
+	config, err := LoadConfigFromFile(configFilename)
+	if err != nil {
+		return err
+	}
+	srv.Config = config
+
 	for name, config := range srv.Config.Stacks {
 		stack := NewStack(name)
 		if err := loadServices(stack, config); err != nil {
@@ -188,6 +190,15 @@ func (srv *Server) Resolve(str, pwd string) (*rig.Descriptor, error) {
 	}
 
 	return d, err
+}
+
+func (srv *Server) ReloadConfig() error {
+	log.Printf("Reloading config...\n")
+	srv.Stacks = map[string]*Stack{}
+	if err := srv.LoadConfig(srv.Config.Filename); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (srv *Server) Version() rig.ApiVersion {

@@ -51,6 +51,7 @@ func makeRouter(srv *Server) (*mux.Router, error) {
 			{"/{stack:.*}/start": postStackStart},
 			{"/{stack:.*}/stop": postStackStop},
 			{"/{stack:.*}/tail": postStackTail},
+			{"/config/reload": postConfigReload},
 		},
 	}
 
@@ -334,6 +335,15 @@ func postStackTail(srv *Server, w http.ResponseWriter, r *http.Request, vars map
 			w.Write(b)
 			w.(http.Flusher).Flush()
 		}
+	}
+
+	return nil
+}
+
+func postConfigReload(srv *Server, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	err := srv.ReloadConfig()
+	if err != nil {
+		return err
 	}
 
 	return nil
