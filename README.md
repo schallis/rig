@@ -4,6 +4,15 @@
 
 Run and manage services on your development machine.
 
+## Installation
+
+Assuming you're on a Mac:
+
+```shell-session
+[me@host ~]$ brew tap gocardless/rig
+[me@host ~]$ brew install rig
+```
+
 ## Overview
 
 There are three terms you need to understand: processes, services, and stacks.
