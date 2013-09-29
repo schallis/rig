@@ -8,7 +8,7 @@ import (
 )
 
 type Resolver struct {
-	config  *Config
+	stacks  map[string]*Stack
 	str     string
 	dir     string
 	stack   *Stack
@@ -16,8 +16,8 @@ type Resolver struct {
 	process *Process
 }
 
-func NewResolver(c *Config, str string, dir string) *Resolver {
-	return &Resolver{config: c, str: str, dir: dir}
+func NewResolver(s map[string]*Stack, str string, dir string) *Resolver {
+	return &Resolver{stacks: s, str: str, dir: dir}
 }
 
 func canonicalise(path string) string {
@@ -29,7 +29,7 @@ func canonicalise(path string) string {
 
 func (r *Resolver) findServiceByDir() *Service {
 	dirPath := canonicalise(r.dir)
-	for _, stack := range r.config.Stacks {
+	for _, stack := range r.stacks {
 		for _, svc := range stack.Services {
 			if canonicalise(svc.Dir) == dirPath {
 				return svc
@@ -42,11 +42,11 @@ func (r *Resolver) findServiceByDir() *Service {
 func (r *Resolver) possibleFirstParts() (map[string]Runnable, error) {
 	possibilities := make(map[string]Runnable)
 
-	for name, stack := range r.config.Stacks {
+	for name, stack := range r.stacks {
 		possibilities[name] = stack
 	}
 
-	for name, service := range r.config.Stacks["default"].Services {
+	for name, service := range r.stacks["default"].Services {
 		possibilities[name] = service
 	}
 

@@ -19,8 +19,8 @@ func Test_ResolvingCompleteDescriptor(t *testing.T) {
 }
 
 func Test_ResolvingDescriptorWithInvalidProcess(t *testing.T) {
-	withConfig(t, func(c *Config) {
-		res := NewResolver(c, "stack1:service1:xprocess", "/")
+	withStacks(t, func(s map[string]*Stack) {
+		res := NewResolver(s, "stack1:service1:xprocess", "/")
 
 		if _, err := res.GetDescriptor(); err == nil {
 			t.Error("Expected a resolution error")
@@ -36,8 +36,8 @@ func Test_ResolvingDescriptorWithoutProcess(t *testing.T) {
 }
 
 func Test_ResolvingDescriptorWithInvalidService(t *testing.T) {
-	withConfig(t, func(c *Config) {
-		res := NewResolver(c, "stack1:xservice", "/")
+	withStacks(t, func(s map[string]*Stack) {
+		res := NewResolver(s, "stack1:xservice", "/")
 
 		if _, err := res.GetDescriptor(); err == nil {
 			t.Error("Expected a resolution error")
@@ -52,8 +52,8 @@ func Test_ResolvingDescriptorWithoutService(t *testing.T) {
 }
 
 func Test_ResolvingDescriptorWithInvalidStack(t *testing.T) {
-	withConfig(t, func(c *Config) {
-		res := NewResolver(c, "xstack", "/")
+	withStacks(t, func(s map[string]*Stack) {
+		res := NewResolver(s, "xstack", "/")
 
 		if _, err := res.GetDescriptor(); err == nil {
 			t.Error("Expected a resolution error")
@@ -62,8 +62,8 @@ func Test_ResolvingDescriptorWithInvalidStack(t *testing.T) {
 }
 
 func Test_ResolvingBlankDescriptor(t *testing.T) {
-	withConfig(t, func(c *Config) {
-		res := NewResolver(c, "", "/")
+	withStacks(t, func(s map[string]*Stack) {
+		res := NewResolver(s, "", "/")
 
 		if _, err := res.GetDescriptor(); err == nil {
 			t.Error("Expected a resolution error")
@@ -123,9 +123,9 @@ func Test_ResolvingContextualSiblingWithProcess(t *testing.T) {
 }
 
 func Test_ResolvingInvalidContextualSibling(t *testing.T) {
-	withConfig(t, func(c *Config) {
-		dir := path.Join(c.Dir, "..", "projects", "srv2")
-		res := NewResolver(c, ":xservice", dir)
+	withStacks(t, func(s map[string]*Stack) {
+		dir := path.Join(tmpDir, "projects", "srv2")
+		res := NewResolver(s, ":xservice", dir)
 
 		if _, err := res.GetDescriptor(); err == nil {
 			t.Error("Expected a resolution error")
@@ -133,12 +133,11 @@ func Test_ResolvingInvalidContextualSibling(t *testing.T) {
 	})
 }
 
-
 // === Test helpers
 
 func checkSimpleResolution(t *testing.T, str string, example *rig.Descriptor) {
-	withConfig(t, func(c *Config) {
-		res := NewResolver(c, str, "/")
+	withStacks(t, func(s map[string]*Stack) {
+		res := NewResolver(s, str, "/")
 
 		d, err := res.GetDescriptor()
 		if err != nil {
@@ -153,9 +152,9 @@ func checkSimpleResolution(t *testing.T, str string, example *rig.Descriptor) {
 }
 
 func checkContextualResolution(t *testing.T, str, dir string, example *rig.Descriptor) {
-	withConfig(t, func(c *Config) {
-		dir = path.Join(c.Dir, "..", dir)
-		res := NewResolver(c, str, dir)
+	withStacks(t, func(s map[string]*Stack) {
+		dir = path.Join(tmpDir, dir)
+		res := NewResolver(s, str, dir)
 
 		d, err := res.GetDescriptor()
 		if err != nil {
@@ -171,40 +170,39 @@ func checkContextualResolution(t *testing.T, str, dir string, example *rig.Descr
 
 // === Config setup helpers
 
-type testFunc func(*Config)
+// type testFunc func(*Config)
+type testFunc func(map[string]*Stack)
 
-func withConfig(t *testing.T, f testFunc) *Config {
-	tmpDir, err := ioutil.TempDir("", "resolver-test")
+var tmpDir string
+
+func withStacks(t *testing.T, f testFunc) {
+	var err error
+	tmpDir, err = ioutil.TempDir("", "resolver-test")
 	if err != nil {
 		t.Fatal("creating temp dir:", err)
 	}
-	//defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(tmpDir)
 
 	projectDir := path.Join(tmpDir, "projects")
 	os.Mkdir(projectDir, 0755)
 	setupProjects(projectDir)
 
-	configDir := path.Join(tmpDir, "config")
-	os.Mkdir(configDir, 0755)
+	stack1 := NewStack("stack1")
+	service1, _ := NewService("service1", path.Join(tmpDir, "projects", "srv1"), stack1)
+	service2, _ := NewService("service2", path.Join(tmpDir, "projects", "srv2"), stack1)
+	stack1.Services[service1.Name] = service1
+	stack1.Services[service2.Name] = service2
 
-	os.Mkdir(path.Join(configDir, "stack1"), 0755)
-	os.Symlink(
-		path.Join(projectDir, "srv1"),
-		path.Join(configDir, "stack1", "service1"),
-	)
-	os.Symlink(
-		path.Join(projectDir, "srv2"),
-		path.Join(configDir, "stack1", "service2"),
-	)
+	defaultStack := NewStack("default")
+	service3, _ := NewService("service3", path.Join(tmpDir, "projects", "srv3"), defaultStack)
+	defaultStack.Services[service3.Name] = service3
 
-	os.Symlink(path.Join(projectDir, "srv3"), path.Join(configDir, "service3"))
+	stacks := map[string]*Stack{
+		"default": defaultStack,
+		"stack1":  stack1,
+	}
 
-	config := NewConfigFromDir(configDir)
-
-	os.Stdout.Sync()
-	f(config)
-
-	return config
+	f(stacks)
 }
 
 func setupProjects(dir string) {

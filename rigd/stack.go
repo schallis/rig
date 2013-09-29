@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/gocardless/rig"
-
 	"sync"
 )
 
@@ -25,7 +24,6 @@ func (s *Stack) Start() error {
 		}(svc)
 	}
 	wg.Wait()
-
 	return nil
 }
 
