@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
@@ -58,7 +59,15 @@ func (p *Process) Start() error {
 		return fmt.Errorf("Process '%s' is already running", p.Sqd())
 	}
 
-	cmd := exec.Command(getUserShell(), "-i", "-l", "-c", p.Cmd)
+	shell := getUserShell()
+	var opts []string
+	switch filepath.Base(shell) {
+	case "zsh":
+		opts = []string{"-i", "-l", "-c", p.Cmd}
+	default:
+		opts = []string{"-l", "-c", p.Cmd}
+	}
+	cmd := exec.Command(shell, opts...)
 	cmd.Dir = p.Service.Dir
 	cmd.Env = os.Environ()
 
