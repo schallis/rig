@@ -38,7 +38,7 @@ func (s *Service) Start() error {
 		wg.Add(1)
 		go func(p *Process) {
 			if err := p.Start(); err != nil {
-				log.Printf("service: error from process %v (%v)\n", p.Name, err)
+				log.Printf("[S] %v\n", err)
 			}
 			wg.Done()
 		}(p)
@@ -50,7 +50,7 @@ func (s *Service) Start() error {
 func (s *Service) Stop() error {
 	for _, p := range s.Processes {
 		if err := p.Stop(); err != nil {
-			log.Printf("service: error from process %v (%v)\n", p.Name, err)
+			log.Printf("[S] %v\n", err)
 		}
 	}
 	return nil
@@ -75,13 +75,13 @@ func (s *Service) parseProcfile(path string) error {
 		parts := strings.SplitN(line, ":", 2)
 
 		if len(parts) != 2 {
-			return fmt.Errorf("error parsing %v (line %v)", path, lineNo)
+			return fmt.Errorf("[S] Error parsing %v (line %v)", path, lineNo)
 		}
 
 		name := strings.TrimSpace(parts[0])
 		cmd := strings.TrimSpace(parts[1])
 		if name == "" || cmd == "" {
-			return fmt.Errorf("error in procfile %v (line %v)", path, lineNo)
+			return fmt.Errorf("[S] Error in procfile %v (line %v)", path, lineNo)
 		}
 
 		s.Processes[name] = NewProcess(name, cmd, s)

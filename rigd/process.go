@@ -41,7 +41,7 @@ func NewProcess(name, cmd string, service *Service) *Process {
 
 func (p *Process) Start() error {
 	if p.Status != Stopped {
-		return fmt.Errorf("process %s:%s is already running", p.Service.Name, p.Name)
+		return fmt.Errorf("Process '%s' is already running", p.Sqd())
 	}
 
 	cmd := exec.Command("/bin/sh", "-c", p.Cmd)
@@ -57,10 +57,9 @@ func (p *Process) Start() error {
 		log.Fatal(err)
 	}
 
-	log.Printf("Starting process '%s:%s'\n", p.Service.Name, p.Name)
+	log.Printf("[P] Starting process %s\n", p.Sqd())
 	if err := cmd.Start(); err != nil {
-		log.Printf("Error starting process '%s:%s': %v\n", p.Service.Name, p.Name, err)
-		return err
+		return fmt.Errorf("Error starting process %s: %v", p.Sqd(), err)
 	}
 	p.Process = cmd.Process
 	p.Status = Running
@@ -74,10 +73,9 @@ func (p *Process) Start() error {
 	wg.Wait()
 
 	if err := cmd.Wait(); err != nil {
-		log.Printf("Process '%s:%s' failed: %v\n", p.Service.Name, p.Name, err)
-		return err
+		return fmt.Errorf("%s failed: %v", p.Sqd(), err)
 	} else {
-		log.Printf("Process '%s:%s' stopped\n", p.Service.Name, p.Name)
+		log.Printf("[P] Process %s stopped\n", p.Sqd())
 	}
 
 	return nil
@@ -85,7 +83,7 @@ func (p *Process) Start() error {
 
 func (p *Process) Stop() error {
 	if p.Status != Running {
-		return fmt.Errorf("can't stop a process that isn't running")
+		return fmt.Errorf("Can't stop: %s isn't running", p.Sqd())
 	}
 
 	p.Process.Signal(syscall.SIGTERM)
@@ -114,8 +112,18 @@ func (p *Process) logStream(stream io.ReadCloser, name string, wg *sync.WaitGrou
 		p.outputDispatcher.Publish(msg)
 	}
 	if err := scanner.Err(); err != nil {
-		log.Printf("error reading %v: %v\n", name, err)
+		log.Printf("Error reading stdout for %s: %v\n", p.Sqd(), err)
 	}
 
 	wg.Done()
+}
+
+// Fully qualified descriptor: stack:service:process
+func (p *Process) Fqd() string {
+	return fmt.Sprintf("%s:%s:%s", p.Service.Stack.Name, p.Service.Name, p.Name)
+}
+
+// Semi qualified descriptor: service:process
+func (p *Process) Sqd() string {
+	return fmt.Sprintf("%s:%s", p.Service.Name, p.Name)
 }
