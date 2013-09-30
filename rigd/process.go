@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/user"
 	"sync"
 	"syscall"
 	"time"
@@ -43,12 +44,21 @@ func NewProcess(name, cmd string, service *Service) *Process {
 	}
 }
 
+func getUserShell() string {
+	user, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	pw := Getpwnam(user.Name)
+	return pw.Shell
+}
+
 func (p *Process) Start() error {
 	if p.Status != Stopped {
 		return fmt.Errorf("Process '%s' is already running", p.Sqd())
 	}
 
-	cmd := exec.Command("/bin/sh", "-c", p.Cmd)
+	cmd := exec.Command(getUserShell(), "-i", "-l", "-c", p.Cmd)
 	cmd.Dir = p.Service.Dir
 	cmd.Env = os.Environ()
 
