@@ -36,11 +36,12 @@ func NewProcessLogger() *ProcessLogger {
 }
 
 func (p *ProcessLogger) Println(m rig.ProcessOutputMessage) {
-	if p.processColor[m.Process] == "" {
-		p.processColor[m.Process] = colors[p.colorCounter]
+	d := m.Stack + ":" + m.Service + ":" + m.Process
+	if p.processColor[d] == "" {
+		p.processColor[d] = colors[p.colorCounter]
 		p.colorCounter++
 	}
-	color := p.processColor[m.Process]
+	color := p.processColor[d]
 
 	str := fmt.Sprintf("%s", color)
 	str += fmt.Sprintf("%s ", m.Time.Format("15:04:05"))
