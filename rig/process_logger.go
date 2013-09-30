@@ -40,6 +40,9 @@ func (p *ProcessLogger) Println(m rig.ProcessOutputMessage) {
 	if p.processColor[d] == "" {
 		p.processColor[d] = colors[p.colorCounter]
 		p.colorCounter++
+		if p.colorCounter == len(colors) {
+			p.colorCounter = 0
+		}
 	}
 	color := p.processColor[d]
 
