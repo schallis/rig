@@ -222,8 +222,6 @@ func (c *Cli) CmdStop(args ...string) error {
 		return err
 	}
 
-	fmt.Println(body)
-
 	return nil
 }
 
