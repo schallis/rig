@@ -1,3 +1,3 @@
 package rig
 
-const Version = "0.4"
+const Version = "0.5"
