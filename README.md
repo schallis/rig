@@ -38,7 +38,8 @@ perform actions on a set of related services.
 ## Configuration
 
 Rig is stored in a JSON file by default at `$HOME/.config/rig/config.json`
-directory. Rig will create one default configuration when it launches for the first time.
+directory. Rig will create one default for you when it launches for the first time.
+
 Here is an example configuration :
 
 ```json
