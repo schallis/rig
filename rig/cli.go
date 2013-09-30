@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	// "strconv"
 )
 
 type Cli struct {
@@ -139,6 +140,26 @@ func (c *Cli) CmdPs(args ...string) error {
 		return err
 	}
 
+	// t := NewTable()
+	// t.AddRow([]string{"PID", "Name", "Status"})
+
+	// for stackName, s := range stacks {
+	// 	for serviceName, svc := range s {
+	// 		for _, process := range svc {
+	// 			var status string
+	// 			if process.Status == 1 {
+	// 				status = "Running"
+	// 			} else {
+	// 				status = "Not running"
+	// 			}
+	// 			d := fmt.Sprintf("%s:%s:%s", stackName, serviceName, process.Name)
+	// 			t.AddRow([]string{strconv.Itoa(process.Pid), d, status})
+	// 		}
+	// 	}
+	// }
+
+	// t.Render()
+
 	fmt.Println("PID    Name           Status")
 	for stackName, s := range stacks {
 		for serviceName, svc := range s {
@@ -217,7 +238,7 @@ func (c *Cli) CmdStop(args ...string) error {
 	}
 	path += "/stop"
 
-	body, _, err := c.call("POST", path, nil)
+	_, _, err = c.call("POST", path, nil)
 	if err != nil {
 		return err
 	}
