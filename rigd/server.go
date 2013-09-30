@@ -109,13 +109,13 @@ func (srv *Server) StopStack(d *rig.Descriptor) error {
 	return nil
 }
 
-func (srv *Server) TailStack(d *rig.Descriptor, c chan rig.ProcessOutputMessage) error {
+func (srv *Server) TailStack(d *rig.Descriptor, c chan rig.ProcessOutputMessage, num int) error {
 	s, err := srv.GetStack(d)
 	if err != nil {
 		return err
 	}
 
-	s.SubscribeToOutput(c)
+	s.SubscribeToOutput(c, num)
 	return nil
 }
 
@@ -141,13 +141,13 @@ func (srv *Server) StopService(d *rig.Descriptor) error {
 	return nil
 }
 
-func (srv *Server) TailService(d *rig.Descriptor, c chan rig.ProcessOutputMessage) error {
+func (srv *Server) TailService(d *rig.Descriptor, c chan rig.ProcessOutputMessage, num int) error {
 	svc, err := srv.GetService(d)
 	if err != nil {
 		return err
 	}
 
-	svc.SubscribeToOutput(c)
+	svc.SubscribeToOutput(c, num)
 	return nil
 }
 
@@ -171,13 +171,13 @@ func (srv *Server) StopProcess(d *rig.Descriptor) error {
 	return p.Stop()
 }
 
-func (srv *Server) TailProcess(d *rig.Descriptor, c chan rig.ProcessOutputMessage) error {
+func (srv *Server) TailProcess(d *rig.Descriptor, c chan rig.ProcessOutputMessage, num int) error {
 	p, err := srv.GetProcess(d)
 	if err != nil {
 		return err
 	}
 
-	p.SubscribeToOutput(c)
+	p.SubscribeToOutput(c, num)
 	return nil
 }
 

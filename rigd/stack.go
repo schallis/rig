@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gocardless/rig"
+	"container/ring"
 	"sync"
 )
 
@@ -34,8 +35,22 @@ func (s *Stack) Stop() error {
 	return nil
 }
 
-func (s *Stack) SubscribeToOutput(c chan rig.ProcessOutputMessage) {
+func (s *Stack) SubscribeToOutput(c chan rig.ProcessOutputMessage, num int) {
+	var buffers []*ring.Ring
 	for _, svc := range s.Services {
-		svc.SubscribeToOutput(c)
+		for _, p := range svc.Processes {
+			buffers = append(buffers, p.buffer)
+		}
+	}
+
+	tailBuffer := MultiTail(buffers, num)
+	for _, msg := range tailBuffer {
+		c <- *msg
+	}
+
+	for _, svc := range s.Services {
+		for _, p := range svc.Processes {
+			p.outputDispatcher.Subscribe(c)
+		}
 	}
 }

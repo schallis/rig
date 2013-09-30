@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"container/ring"
 	"fmt"
 	"github.com/gocardless/rig"
 	"io"
@@ -27,6 +28,8 @@ type Process struct {
 	Status           ProcessStatus
 	Process          *os.Process
 	outputDispatcher *ProcessOutputDispatcher
+	buffer           *ring.Ring
+	bufferMutex      sync.Mutex
 }
 
 func NewProcess(name, cmd string, service *Service) *Process {
@@ -36,6 +39,7 @@ func NewProcess(name, cmd string, service *Service) *Process {
 		Service:          service,
 		Status:           Stopped,
 		outputDispatcher: NewProcessOutputDispatcher(),
+		buffer:           ring.New(100),
 	}
 }
 
@@ -91,12 +95,26 @@ func (p *Process) Stop() error {
 	return nil
 }
 
-func (p *Process) SubscribeToOutput(c chan rig.ProcessOutputMessage) {
+func (p *Process) SubscribeToOutput(c chan rig.ProcessOutputMessage, num int) {
+	tailBuffer := MultiTail([]*ring.Ring{p.buffer}, num)
+	for _, msg := range tailBuffer {
+		c <- *msg
+	}
 	p.outputDispatcher.Subscribe(c)
 }
 
 func (p *Process) setStatus(status ProcessStatus) {
 	p.Status = status
+}
+
+func (p *Process) appendToBuffer(msg rig.ProcessOutputMessage) {
+	p.bufferMutex.Lock()
+	defer p.bufferMutex.Unlock()
+
+	if (p.buffer.Value != nil) {
+		p.buffer = p.buffer.Next()
+	}
+	p.buffer.Value = msg
 }
 
 func (p *Process) logStream(stream io.ReadCloser, name string, wg *sync.WaitGroup) {
@@ -110,6 +128,7 @@ func (p *Process) logStream(stream io.ReadCloser, name string, wg *sync.WaitGrou
 			Time:    time.Now(),
 		}
 		p.outputDispatcher.Publish(msg)
+		p.appendToBuffer(msg)
 	}
 	if err := scanner.Err(); err != nil {
 		log.Printf("Error reading stdout for %s: %v\n", p.Sqd(), err)

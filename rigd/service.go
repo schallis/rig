@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gocardless/rig"
 	"log"
+	"container/ring"
 	"os"
 	"path"
 	"strings"
@@ -56,7 +57,17 @@ func (s *Service) Stop() error {
 	return nil
 }
 
-func (s *Service) SubscribeToOutput(c chan rig.ProcessOutputMessage) {
+func (s *Service) SubscribeToOutput(c chan rig.ProcessOutputMessage, num int) {
+	var buffers []*ring.Ring
+	for _, p := range s.Processes {
+		buffers = append(buffers, p.buffer)
+	}
+
+	tailBuffer := MultiTail(buffers, num)
+	for _, msg := range tailBuffer {
+		c <- *msg
+	}
+
 	for _, p := range s.Processes {
 		p.outputDispatcher.Subscribe(c)
 	}
