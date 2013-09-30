@@ -37,30 +37,47 @@ perform actions on a set of related services.
 
 ## Configuration
 
-Rig is configured by placing directories and symlinks in the `$HOME/.rig/`
-directory. Typically, there will be a directory for each stack in the `.rig`
-directory. Within each of these stack directories, there will be symlinks that
-point to the stack's services.
+Rig is stored in a JSON file by default at `$HOME/.config/rig/config.json`
+directory. Rig will create one default configuration when it launches for the first time.
+Here is an example configuration :
 
-In the following example, we create a stack named "acme", with two services:
-"api" and "website":
-
-```shell-session
-# Create a stack
-[me@host ~]$ mkdir -p ~/.rig/acme
-
-# Add some services to the stack
-[me@host ~]$ ln -s ~/projects/acme-api ~/.rig/acme/api
-[me@host ~]$ ln -s ~/projects/acme-website ~/.rig/acme/website
+```json
+{
+  "stacks": {
+    "default": {},
+    "acme": {
+      "acme-api": {
+        "dir": "/Users/steve/src/acme-api"
+      },
+      "acme-website": {
+        "dir": "/Users/steve/src/acme-website"
+      }
+    }
+  }
+}
 ```
 
 If you have a simpler application that only has one service (e.g. a basic Rails
-app), you can create symlink in the `.rig` directory that points directly to
-that service:
+app), you can add it to the 'default' stack:
 
-```shell-session
-# Create a top-level service
-[me@host ~]$ ln -s ~/projects/my-rails-blog ~/.rig/blog
+```json
+{
+  "stacks": {
+    "default": {
+      "blog": {
+        "dir": "/Users/steve/src/my-rails-blog"
+      }
+    },
+    "acme": {
+      "acme-api": {
+        "dir": "/Users/steve/src/acme-api"
+      },
+      "acme-website": {
+        "dir": "/Users/steve/src/acme-website"
+      }
+    }
+  }
+}
 ```
 
 ## Usage
