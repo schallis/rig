@@ -50,6 +50,7 @@ func (p *Process) Start() error {
 
 	cmd := exec.Command("/bin/sh", "-c", p.Cmd)
 	cmd.Dir = p.Service.Dir
+	cmd.Env = os.Environ()
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -111,7 +112,7 @@ func (p *Process) appendToBuffer(msg rig.ProcessOutputMessage) {
 	p.bufferMutex.Lock()
 	defer p.bufferMutex.Unlock()
 
-	if (p.buffer.Value != nil) {
+	if p.buffer.Value != nil {
 		p.buffer = p.buffer.Next()
 	}
 	p.buffer.Value = msg
