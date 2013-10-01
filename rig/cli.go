@@ -6,12 +6,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gocardless/rig"
+	"github.com/stevedomin/termtable"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
-	// "strconv"
+	"strconv"
 )
 
 type Cli struct {
@@ -75,7 +76,7 @@ func (c *Cli) CmdHelp(args ...string) error {
 	} {
 		help += fmt.Sprintf("    %-10.10s%s\n", cmd[0], cmd[1])
 	}
-	fmt.Println(help)
+	fmt.Printf(help)
 	return nil
 }
 
@@ -112,7 +113,6 @@ func (c *Cli) CmdList(args ...string) error {
 			}
 		}
 	}
-	fmt.Println("")
 
 	return nil
 }
@@ -140,27 +140,8 @@ func (c *Cli) CmdPs(args ...string) error {
 		return err
 	}
 
-	// t := NewTable()
-	// t.AddRow([]string{"PID", "Name", "Status"})
-
-	// for stackName, s := range stacks {
-	// 	for serviceName, svc := range s {
-	// 		for _, process := range svc {
-	// 			var status string
-	// 			if process.Status == 1 {
-	// 				status = "Running"
-	// 			} else {
-	// 				status = "Not running"
-	// 			}
-	// 			d := fmt.Sprintf("%s:%s:%s", stackName, serviceName, process.Name)
-	// 			t.AddRow([]string{strconv.Itoa(process.Pid), d, status})
-	// 		}
-	// 	}
-	// }
-
-	// t.Render()
-
-	fmt.Println("PID    Name           Status")
+	t := termtable.NewTable(nil, &termtable.TableOptions{Padding: 2})
+	t.SetHeader([]string{"PID", "Name", "Status"})
 	for stackName, s := range stacks {
 		for serviceName, svc := range s {
 			for _, process := range svc {
@@ -168,12 +149,14 @@ func (c *Cli) CmdPs(args ...string) error {
 				if process.Status == 1 {
 					status = "Running"
 				} else {
-					status = "Not running"
+					status = "Stopped"
 				}
-				fmt.Printf("%d  %s:%s:%s       %s\n", process.Pid, stackName, serviceName, process.Name, status)
+				d := fmt.Sprintf("%s:%s:%s", stackName, serviceName, process.Name)
+				t.AddRow([]string{strconv.Itoa(process.Pid), d, status})
 			}
 		}
 	}
+	t.Render()
 
 	return nil
 }
